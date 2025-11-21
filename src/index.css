@@ -154,8 +154,8 @@ All colors MUST be HSL.
   }
   
   @keyframes shimmer {
-    0% { background-position: -1000px 0; }
-    100% { background-position: 1000px 0; }
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
   
   .shimmer {

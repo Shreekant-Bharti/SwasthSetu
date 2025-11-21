@@ -162,8 +162,7 @@ const Footer = () => {
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-center md:text-left">
             <p className="text-sm text-white/60">
-              © 2025 SwasthSetu. All rights reserved.{" "}
-              <span className="text-coral">❤️</span> Made for Rural India
+              © 2025 SwasthSetu. All rights reserved. Made for Rural India
             </p>
             <p className="text-sm text-white/50 mt-1">
               Crafted with passion by{" "}
