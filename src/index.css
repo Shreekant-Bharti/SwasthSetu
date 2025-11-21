@@ -40,18 +40,18 @@ All colors MUST be HSL.
 
     --hero-overlay: 217 91% 15%;
     --hero-overlay-light: 197 71% 40%;
-    
+
     --success: 142 76% 45%;
     --success-foreground: 0 0% 100%;
-    
+
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    
+
     --coral: 16 85% 65%;
     --teal: 180 70% 42%;
     --indigo: 238 60% 60%;
     --soft-green: 142 60% 55%;
-    
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -90,10 +90,10 @@ All colors MUST be HSL.
     --border: 217 32% 25%;
     --input: 217 32% 25%;
     --ring: 197 92% 48%;
-    
+
     --hero-overlay: 217 91% 10%;
     --hero-overlay-light: 197 71% 30%;
-    
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -112,10 +112,15 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-bold;
   }
 
@@ -136,28 +141,37 @@ All colors MUST be HSL.
   .text-gradient {
     @apply bg-gradient-to-r from-teal to-coral bg-clip-text text-transparent;
   }
-  
+
   .glassmorphism {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.18);
   }
-  
+
   .floating {
     animation: float 6s ease-in-out infinite;
   }
-  
+
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
   }
-  
+
   @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
   }
-  
+
   .shimmer {
     animation: shimmer 6s linear infinite;
     background: linear-gradient(
