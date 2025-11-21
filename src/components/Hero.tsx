@@ -52,47 +52,47 @@ const Hero = () => {
         </div>
       
         <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          {/* Premium Glassmorphism Title Card */}
+          {/* Premium Glassmorphism Title Card - Centered Over Video */}
           <div 
-            className="inline-block px-6 sm:px-10 md:px-12 py-6 sm:py-8 md:py-10 rounded-[24px] sm:rounded-[30px] mb-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/20 animate-scale-in backdrop-blur-[25px]"
+            className="inline-block px-8 sm:px-12 md:px-16 py-8 sm:py-10 md:py-12 rounded-3xl mb-8 animate-scale-in"
             style={{ 
-              background: 'rgba(255, 255, 255, 0.18)',
-              backdropFilter: 'blur(25px)',
-              WebkitBackdropFilter: 'blur(25px)'
+              background: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
             }}
           >
-            <div className="relative">
-              <h1 
-                className="font-black tracking-wider mb-0 leading-[1.1] relative"
-                style={{ 
-                  fontFamily: "'Poppins', 'Inter', sans-serif",
-                  fontSize: 'clamp(28px, 8vw, 96px)',
-                  fontWeight: '900',
-                  letterSpacing: '1px',
-                  background: 'linear-gradient(135deg, #006F7A 0%, #FF7A6E 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  filter: 'drop-shadow(0 4px 20px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 40px rgba(255, 255, 255, 0.3))',
-                  textShadow: '0 0 60px rgba(0, 111, 122, 0.5), 0 0 80px rgba(255, 122, 110, 0.4)',
-                }}
-              >
-                <span className="relative inline-block">
-                  SwasthSetu
-                  {/* Shimmer Effect */}
-                  <span 
-                    className="absolute inset-0 opacity-40"
-                    style={{
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%)',
-                      backgroundSize: '200% 100%',
-                      animation: 'shimmer 6s linear infinite',
-                      WebkitBackgroundClip: 'text',
-                      backgroundClip: 'text',
-                    }}
-                  />
-                </span>
-              </h1>
-            </div>
+            <h1 
+              className="mb-0 leading-none relative"
+              style={{ 
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: 'clamp(28px, 7vw, 96px)',
+                fontWeight: '900',
+                letterSpacing: '1px',
+                background: 'linear-gradient(135deg, #146768 0%, #FF6F61 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5))',
+                textShadow: '0 0 40px rgba(20, 103, 104, 0.3)',
+              }}
+            >
+              <span className="relative inline-block">
+                SwasthSetu
+                {/* Shimmer Effect - Left to Right Animation */}
+                <span 
+                  className="absolute inset-0"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.8) 50%, transparent 100%)',
+                    backgroundSize: '200% 100%',
+                    animation: 'shimmer 6s linear infinite',
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                  }}
+                />
+              </span>
+            </h1>
           </div>
 
           {/* Bilingual Tagline */}
