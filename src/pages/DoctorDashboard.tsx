@@ -297,15 +297,15 @@ const DoctorDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-gray-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] border-b sticky top-0 z-50 shadow-lg">
+    <div className="min-h-screen bg-gradient-to-br from-[#FFF7FB] via-[#F8FBFB] to-[#FFEFD6]/30">
+      {/* Header - Soft Pastel Gradient with Glassmorphism */}
+      <header className="pastel-glass-header sticky top-0 z-50 shadow-sm rounded-b-xl">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Heart className="w-8 h-8 text-white" />
-            <h1 className="text-2xl font-bold text-white">SwasthSetu - Doctor Portal</h1>
+            <Heart className="w-8 h-8 text-[#F97316]" />
+            <h1 className="text-xl md:text-2xl font-bold text-gray-800">SwasthSetu - Doctor Portal</h1>
           </div>
-          <Button onClick={handleLogout} variant="secondary" size="sm" className="hover:scale-105 transition-transform">
+          <Button onClick={handleLogout} variant="outline" size="sm" className="hover:scale-105 transition-transform bg-white/60 border-white/50 text-gray-700 hover:bg-white/80">
             <LogOut className="mr-2 h-4 w-4" />
             Logout
           </Button>
@@ -313,39 +313,47 @@ const DoctorDashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Doctor Profile Section - Glassmorphism Card */}
-        <div className="glass-profile-card card-entrance mb-8 transition-transform duration-150 ease-out hover:-translate-y-1.5 hover:scale-[1.01]">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-            {/* Doctor Avatar with Shimmer */}
-            <div className="relative avatar-shimmer">
-              <Avatar className="w-16 h-16 md:w-[88px] md:h-[88px] lg:w-[120px] lg:h-[120px] border-2 border-white shadow-lg ring-2 ring-white">
-                <AvatarImage src={doctorNew} alt="Dr. Sneha Kumari" className="object-cover" />
-                <AvatarFallback>SK</AvatarFallback>
-              </Avatar>
+        {/* Doctor Profile Section - Large & Prominent */}
+        <div className="glass-profile-prominent card-entrance mb-8 transition-transform duration-[180ms] ease-out hover:-translate-y-1.5 hover:scale-[1.01]">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+            {/* Doctor Avatar - Large with Float Animation */}
+            <div className="relative animate-doctor-float">
+              <div className="relative">
+                <Avatar className="w-20 h-20 md:w-28 md:h-28 lg:w-44 lg:h-44 border-4 border-white shadow-xl ring-4 ring-white/50">
+                  <AvatarImage src={doctorNew} alt="Dr. Snehh Kumar — profile photo" className="object-cover" />
+                  <AvatarFallback className="text-2xl">SK</AvatarFallback>
+                </Avatar>
+                {/* Subtle sparkle accent behind photo */}
+                <div className="absolute -inset-2 bg-gradient-to-br from-[#F6E6FF]/50 via-transparent to-[#FFDDF0]/50 rounded-full -z-10 blur-sm"></div>
+              </div>
             </div>
             
             {/* Doctor Info */}
             <div className="flex-1 text-center md:text-left">
-              <h2 className="text-base md:text-lg font-bold text-foreground mb-1">Dr. Sneha Kumari</h2>
-              <p className="text-sm text-muted-foreground mb-2">Cardiologist — Dhanpur Hospital</p>
-              <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
+              <h2 className="doctor-name-shimmer text-2xl md:text-[28px] lg:text-[34px] mb-2">
+                Dr. Snehh Kumar
+              </h2>
+              <p className="text-sm md:text-base text-muted-foreground font-medium mb-3">
+                Specialist — Dhanpur Hospital
+              </p>
+              <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100 px-3 py-1">
                 <Circle className="w-2 h-2 mr-1.5 fill-green-500 text-green-500" />
-                Online
+                Available
               </Badge>
             </div>
           </div>
           
           {/* Stats Row */}
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            <div className="bg-gradient-to-br from-pastel-coral-light/30 to-pastel-coral/20 rounded-xl p-3 shadow-sm">
+          <div className="grid grid-cols-3 gap-3 mt-6">
+            <div className="bg-gradient-to-br from-[#FFDDF0]/40 to-[#F6E6FF]/30 rounded-xl p-3 shadow-sm">
               <p className="text-xs text-muted-foreground mb-0.5">Contact</p>
               <p className="font-semibold text-foreground text-sm">+91 98765-43211</p>
             </div>
-            <div className="bg-gradient-to-br from-pastel-mint/30 to-pastel-mint/20 rounded-xl p-3 shadow-sm">
+            <div className="bg-gradient-to-br from-[#9BE7D1]/30 to-[#9BE7D1]/20 rounded-xl p-3 shadow-sm">
               <p className="text-xs text-muted-foreground mb-0.5">Available</p>
               <p className="font-semibold text-foreground text-sm">9 AM - 6 PM</p>
             </div>
-            <div className="bg-gradient-to-br from-purple-100/50 to-purple-50/30 rounded-xl p-3 shadow-sm">
+            <div className="bg-gradient-to-br from-[#FFEFD6]/50 to-[#FFEFD6]/30 rounded-xl p-3 shadow-sm">
               <p className="text-xs text-muted-foreground mb-0.5">Specialty</p>
               <p className="font-semibold text-foreground text-sm">Cardiology</p>
             </div>
@@ -370,11 +378,9 @@ const DoctorDashboard = () => {
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <span className="patient-name-pill inline-block">
-                            <span className="patient-name-gradient name-sparkle text-lg md:text-2xl lg:text-[32px]">
-                              {apt.patientName === 'Patient Name' ? 'Anupma' : apt.patientName}
-                            </span>
-                          </span>
+                          <p className="font-semibold text-base text-gray-800 truncate max-w-[200px]">
+                            {apt.patientName === 'Patient Name' ? 'Anupma' : apt.patientName}
+                          </p>
                           <p className="text-sm text-muted-foreground">{apt.hospital}</p>
                           <p className="text-sm text-muted-foreground">Department: {apt.department || 'General'}</p>
                           <p className="text-sm text-muted-foreground">{apt.date} at {apt.time}</p>
@@ -436,19 +442,17 @@ const DoctorDashboard = () => {
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid md:grid-cols-3 gap-6">
-              {patientRecords.map((patient) => (
-                <Card key={patient.id} className="border-2 border-pastel-mint/30 hover:border-pastel-coral/50 transition-all hover:shadow-xl hover:-translate-y-1 bg-pastel-card-tint">
-                  <CardContent className="p-6">
+              {patientRecords.map((patient, index) => (
+                <Card key={patient.id} className="border border-gray-100 hover:border-[#9BE7D1] transition-all hover:shadow-lg bg-white/80" style={{ animationDelay: `${index * 100}ms` }}>
+                  <CardContent className="p-6 animate-fade-in">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <span className="patient-name-pill inline-block mb-1">
-                          <span className="patient-name-gradient name-sparkle text-lg md:text-xl lg:text-2xl">
-                            {patient.name === 'Ramesh Kumar' ? 'Anupma' : patient.name}
-                          </span>
-                        </span>
+                        <p className="font-semibold text-base text-gray-800 truncate max-w-[180px]">
+                          {patient.name === 'Ramesh Kumar' ? 'Anupma' : patient.name}
+                        </p>
                         <p className="text-sm text-muted-foreground">Age: {patient.age} years</p>
                       </div>
-                      <Badge variant="outline" className="bg-pastel-mint/20 text-teal border-pastel-mint">
+                      <Badge variant="outline" className="bg-[#9BE7D1]/20 text-teal-700 border-[#9BE7D1]">
                         {patient.diagnosis}
                       </Badge>
                     </div>

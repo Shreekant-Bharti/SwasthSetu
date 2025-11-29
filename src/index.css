@@ -248,7 +248,60 @@ All colors MUST be HSL.
     pointer-events: none;
   }
 
-  /* Patient name gradient styling */
+  /* Large prominent profile card */
+  .glass-profile-prominent {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 15px 40px rgba(16, 24, 40, 0.08);
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .glass-profile-prominent::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+    pointer-events: none;
+  }
+
+  /* Float animation for doctor photo */
+  @keyframes doctor-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+  
+  .animate-doctor-float {
+    animation: doctor-float 4s ease-in-out infinite;
+  }
+
+  /* Doctor name shimmer animation */
+  @keyframes doctor-name-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  .doctor-name-shimmer {
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    background: linear-gradient(
+      90deg,
+      hsl(var(--teal)) 0%,
+      hsl(16, 85%, 65%) 50%,
+      hsl(var(--teal)) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: doctor-name-shimmer 6s linear infinite;
+  }
+
+  /* Patient name gradient styling - for special cases only */
   .patient-name-gradient {
     font-family: 'Pacifico', 'Great Vibes', 'Poppins', sans-serif;
     background: linear-gradient(90deg, #FF6B6B, #FF9A8B);
@@ -263,5 +316,13 @@ All colors MUST be HSL.
     background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(255, 154, 139, 0.1));
     border-radius: 9999px;
     padding: 4px 12px;
+  }
+
+  /* Pastel header glassmorphism */
+  .pastel-glass-header {
+    background: linear-gradient(to right, #F6E6FF, #FFDDF0, #FFEFD6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   }
 }
