@@ -62,6 +62,13 @@ All colors MUST be HSL.
     --indigo: 238 60% 60%;
     --soft-green: 142 60% 55%;
     
+    /* Pastel palette for feminine styling */
+    --pastel-coral: 0 78% 72%;
+    --pastel-coral-light: 12 100% 82%;
+    --pastel-mint: 163 63% 74%;
+    --pastel-pink-bg: 340 50% 98%;
+    --pastel-card-tint: 180 30% 98%;
+    
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -177,5 +184,84 @@ All colors MUST be HSL.
       transparent 100%
     );
     background-size: 1000px 100%;
+  }
+
+  /* Avatar shimmer animation */
+  @keyframes avatar-shimmer {
+    0% { background-position: -150% 0; }
+    100% { background-position: 150% 0; }
+  }
+  
+  .avatar-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: avatar-shimmer 6s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Name sparkle animation */
+  @keyframes sparkle {
+    0%, 100% { opacity: 1; filter: brightness(1); }
+    50% { opacity: 0.9; filter: brightness(1.2); }
+  }
+  
+  .name-sparkle {
+    animation: sparkle 1s ease-out forwards;
+  }
+
+  /* Card entrance animation */
+  @keyframes card-entrance {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  
+  .card-entrance {
+    animation: card-entrance 500ms ease-out forwards;
+  }
+
+  /* Glassmorphism profile card */
+  .glass-profile-card {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 10px 30px rgba(16, 24, 40, 0.06);
+    position: relative;
+  }
+  
+  .glass-profile-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+    pointer-events: none;
+  }
+
+  /* Patient name gradient styling */
+  .patient-name-gradient {
+    font-family: 'Pacifico', 'Great Vibes', 'Poppins', sans-serif;
+    background: linear-gradient(90deg, #FF6B6B, #FF9A8B);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Patient name pill background */
+  .patient-name-pill {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(255, 154, 139, 0.1));
+    border-radius: 9999px;
+    padding: 4px 12px;
   }
 }
