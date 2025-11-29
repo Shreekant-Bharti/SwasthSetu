@@ -66,11 +66,16 @@ const PrescriptionView = ({ userId }: PrescriptionViewProps) => {
 
   const parseMedicines = (text: string): Array<{name: string, price: number}> => {
     const lines = text.split(/[,\n]/).map(l => l.trim()).filter(l => l.length > 0);
-    // Assign random prices between ₹50-500
-    return lines.map(name => ({
-      name,
-      price: Math.floor(Math.random() * 450) + 50
-    }));
+    // Generate consistent prices based on medicine name (deterministic hash)
+    return lines.map(name => {
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = ((hash << 5) - hash) + name.charCodeAt(i);
+        hash = hash & hash;
+      }
+      const price = Math.abs(hash % 450) + 50;
+      return { name, price };
+    });
   };
 
   const parseTests = (text: string): string[] => {
