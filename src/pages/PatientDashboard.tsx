@@ -14,6 +14,7 @@ import AppointmentHistory from "@/components/patient/AppointmentHistory";
 import EmergencyContacts from "@/components/patient/EmergencyContacts";
 import PrescriptionView from "@/components/patient/PrescriptionView";
 import NotificationsPanel from "@/components/patient/NotificationsPanel";
+import OrderHistory from "@/components/patient/OrderHistory";
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
@@ -67,6 +68,7 @@ const PatientDashboard = () => {
             <OnlineConsultation userId={user.id} userName={user.name} />
           </div>
           <MedicineReservation />
+          <OrderHistory userId={user.id} />
           <div className="grid md:grid-cols-2 gap-6">
             <FamilyInsurance userId={user.id} />
             <EmergencyContacts />

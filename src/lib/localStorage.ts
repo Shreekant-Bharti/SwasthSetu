@@ -122,8 +122,11 @@ export interface MedicineOrder {
   medicines: string;
   address: string;
   phone: string;
-  status: 'pending' | 'processing' | 'delivered';
+  status: 'pending' | 'processing' | 'delivered' | 'cancelled';
   orderDate: string;
+  deliveredAt?: string;
+  cancelledAt?: string;
+  cancellationReason?: string;
 }
 
 export interface LabBooking {
@@ -153,7 +156,11 @@ export interface MedicineReservation {
   paymentMethod: 'COD' | 'Online';
   paymentStatus: 'pending' | 'completed';
   orderDate: string;
-  status: 'pending' | 'confirmed' | 'delivered';
+  status: 'pending' | 'confirmed' | 'delivered' | 'cancelled';
+  deliveredAt?: string;
+  cancelledAt?: string;
+  cancellationReason?: string;
+  prescriptionId?: string;
 }
 
 // Initialize sample data
@@ -239,7 +246,20 @@ const initializeSampleData = () => {
   }
 
   if (!localStorage.getItem('medicineOrders')) {
-    localStorage.setItem('medicineOrders', JSON.stringify([]));
+    const sampleOrders: MedicineOrder[] = [
+      {
+        id: 'ord-001',
+        patientId: '1',
+        patientName: 'Ramesh Kumar',
+        prescriptionId: 'presc-001',
+        medicines: 'Paracetamol 500mg (Qty: 2) - ₹100',
+        address: '123 Main Street, Dhanpur, PIN: 123456',
+        phone: '9876543210',
+        status: 'pending',
+        orderDate: '2025-11-28'
+      }
+    ];
+    localStorage.setItem('medicineOrders', JSON.stringify(sampleOrders));
   }
 
   if (!localStorage.getItem('labBookings')) {
@@ -247,7 +267,26 @@ const initializeSampleData = () => {
   }
 
   if (!localStorage.getItem('medicineReservations')) {
-    localStorage.setItem('medicineReservations', JSON.stringify([]));
+    const sampleReservations: MedicineReservation[] = [
+      {
+        id: 'res-001',
+        patientId: '1',
+        patientName: 'Ramesh Kumar',
+        medicineName: 'Cough Syrup',
+        quantity: 2,
+        totalPrice: 170,
+        shopName: 'Dhanpur Medical Store',
+        customerName: 'Ramesh Kumar',
+        address: '123 Main Street, Dhanpur',
+        pincode: '123456',
+        phone: '9876543210',
+        paymentMethod: 'COD',
+        paymentStatus: 'pending',
+        orderDate: '2025-11-29',
+        status: 'pending'
+      }
+    ];
+    localStorage.setItem('medicineReservations', JSON.stringify(sampleReservations));
   }
 };
 
@@ -511,6 +550,28 @@ export const addMedicineReservation = (reservation: Omit<MedicineReservation, 'i
   reservations.push(newReservation);
   localStorage.setItem('medicineReservations', JSON.stringify(reservations));
   return newReservation;
+};
+
+export const updateMedicineReservation = (id: string, updates: Partial<MedicineReservation>): MedicineReservation | null => {
+  const reservations = getMedicineReservations();
+  const index = reservations.findIndex(r => r.id === id);
+  if (index !== -1) {
+    reservations[index] = { ...reservations[index], ...updates };
+    localStorage.setItem('medicineReservations', JSON.stringify(reservations));
+    return reservations[index];
+  }
+  return null;
+};
+
+export const updateMedicineOrder = (id: string, updates: Partial<MedicineOrder>): MedicineOrder | null => {
+  const orders = getMedicineOrders();
+  const index = orders.findIndex(o => o.id === id);
+  if (index !== -1) {
+    orders[index] = { ...orders[index], ...updates };
+    localStorage.setItem('medicineOrders', JSON.stringify(orders));
+    return orders[index];
+  }
+  return null;
 };
 
 // Notification utilities
