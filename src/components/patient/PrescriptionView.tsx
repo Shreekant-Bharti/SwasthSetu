@@ -309,6 +309,19 @@ Contact: +91 98765-43211
                       </div>
                     )}
 
+                    {(prescription as any).opdImage && (
+                      <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-5 shadow-inner">
+                        <p className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                          📋 OPD Card:
+                        </p>
+                        <img 
+                          src={(prescription as any).opdImage} 
+                          alt="OPD Card" 
+                          className="max-w-full rounded-lg border-2 border-purple-200 shadow-md"
+                        />
+                      </div>
+                    )}
+
                     <div className="flex flex-wrap gap-3 pt-4">
                       <Button 
                         onClick={() => downloadPrescription(prescription)}

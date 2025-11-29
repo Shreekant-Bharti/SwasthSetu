@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCurrentUser, logout, getAppointments, getChats, addChatMessage, getPatientHistory, addPrescription, addPatientHistory, Appointment, Chat } from "@/lib/localStorage";
+import { getCurrentUser, logout, getAppointments, getChats, addChatMessage, getPatientHistory, addPrescription, addPatientHistory, updateAppointment, addNotification, addHospitalReferral, Appointment, Chat } from "@/lib/localStorage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { LogOut, Calendar, MessageSquare, Send, FileText, User, Stethoscope, Heart } from "lucide-react";
+import { LogOut, Calendar, MessageSquare, Send, FileText, User, Stethoscope, Heart, Camera, Check, ArrowLeft, Upload } from "lucide-react";
 import drSnehh from "@/assets/dr-snehh.jpg";
 import { toast } from "sonner";
 
@@ -44,6 +44,20 @@ const DoctorDashboard = () => {
     tests: '',
     dietTips: ''
   });
+
+  // OPD Card Camera
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [selectedAppointmentForOPD, setSelectedAppointmentForOPD] = useState<Appointment | null>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+
+  // Refer Modal
+  const [showReferModal, setShowReferModal] = useState(false);
+  const [referAppointment, setReferAppointment] = useState<Appointment | null>(null);
+  const [referReason, setReferReason] = useState("");
 
   // Sample patient records
   const [patientRecords] = useState<PatientRecord[]>([
@@ -98,19 +112,152 @@ const DoctorDashboard = () => {
     setChats(getChats());
   };
 
+  useEffect(() => {
+    const interval = setInterval(loadData, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  const updateAppointmentStatus = (id: string, status: 'pending' | 'checked' | 'referred') => {
-    const allAppointments = getAppointments();
-    const updated = allAppointments.map(apt => 
-      apt.id === id ? { ...apt, status } : apt
-    );
-    localStorage.setItem('appointments', JSON.stringify(updated));
-    setAppointments(updated);
-    toast.success("Appointment status updated");
+  const handleMarkChecked = (appointment: Appointment) => {
+    updateAppointment(appointment.id, { status: 'checked' });
+    
+    addNotification({
+      userId: appointment.userId,
+      type: 'prescription',
+      message: `Your consultation with Dr. Snehh Kumar is complete. Check My Prescriptions for details.`,
+      appointmentId: appointment.id
+    });
+    
+    toast.success("Appointment marked as checked");
+    loadData();
+  };
+
+  const openCameraForOPD = async (appointment: Appointment) => {
+    setSelectedAppointmentForOPD(appointment);
+    setCapturedImage(null);
+    setShowCameraModal(true);
+  };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setIsCameraActive(true);
+      }
+    } catch (error) {
+      toast.error("Could not access camera. Please use file upload instead.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+      setIsCameraActive(false);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const context = canvasRef.current.getContext('2d');
+      if (context) {
+        canvasRef.current.width = videoRef.current.videoWidth;
+        canvasRef.current.height = videoRef.current.videoHeight;
+        context.drawImage(videoRef.current, 0, 0);
+        const imageData = canvasRef.current.toDataURL('image/jpeg', 0.8);
+        setCapturedImage(imageData);
+        stopCamera();
+      }
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCapturedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const saveOPDCard = () => {
+    if (!capturedImage || !selectedAppointmentForOPD) return;
+
+    // Update appointment with OPD card image
+    updateAppointment(selectedAppointmentForOPD.id, { 
+      opdCardImage: capturedImage,
+      status: 'checked'
+    });
+
+    // Create prescription with the OPD card image
+    addPrescription({
+      patientId: selectedAppointmentForOPD.userId,
+      patientName: selectedAppointmentForOPD.patientName,
+      doctorName: 'Dr. Snehh Kumar',
+      date: new Date().toISOString().split('T')[0],
+      medicines: 'See OPD Card Image',
+      diagnosis: 'Consultation Complete',
+      notes: 'OPD Card Uploaded',
+      opdImage: capturedImage
+    } as any);
+
+    addNotification({
+      userId: selectedAppointmentForOPD.userId,
+      type: 'prescription',
+      message: `Dr. Snehh Kumar has uploaded your OPD prescription card. Check My Prescriptions to view and download.`,
+      appointmentId: selectedAppointmentForOPD.id
+    });
+
+    toast.success("OPD Card saved and sent to patient!");
+    setShowCameraModal(false);
+    setCapturedImage(null);
+    loadData();
+  };
+
+  const openReferModal = (appointment: Appointment) => {
+    setReferAppointment(appointment);
+    setReferReason("");
+    setShowReferModal(true);
+  };
+
+  const handleReferToHospital = () => {
+    if (!referReason.trim()) {
+      toast.error("Please provide a reason for referral");
+      return;
+    }
+
+    if (referAppointment) {
+      updateAppointment(referAppointment.id, { status: 'referred' });
+
+      addHospitalReferral({
+        appointmentId: referAppointment.id,
+        patientName: referAppointment.patientName,
+        patientId: referAppointment.userId,
+        doctorName: 'Dr. Snehh Kumar',
+        reason: referReason
+      });
+
+      addNotification({
+        userId: referAppointment.userId,
+        type: 'referral',
+        message: `Dr. Snehh Kumar has referred you back to the hospital for further treatment. Reason: ${referReason}`,
+        appointmentId: referAppointment.id
+      });
+
+      toast.success("Patient referred to hospital!");
+      setShowReferModal(false);
+      loadData();
+    }
   };
 
   const handleSendReply = () => {
@@ -143,7 +290,6 @@ const DoctorDashboard = () => {
       return;
     }
 
-    // Save prescription to both prescriptions and patient history
     const notesText = [
       prescriptionData.symptoms,
       prescriptionData.tests ? `Tests: ${prescriptionData.tests}` : '',
@@ -162,7 +308,6 @@ const DoctorDashboard = () => {
 
     addPrescription(prescriptionRecord);
 
-    // Add to patient history
     addPatientHistory({
       patientId: prescriptionPatient?.id || '1',
       patientName: prescriptionPatient?.name || '',
@@ -178,6 +323,11 @@ const DoctorDashboard = () => {
   };
 
   if (!user) return null;
+
+  // Filter appointments transferred to doctor
+  const transferredAppointments = appointments.filter(apt => 
+    apt.transferredToDoctor && (apt.status === 'transferred' || apt.status === 'checked' || apt.status === 'referred')
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-gray-50">
@@ -196,7 +346,7 @@ const DoctorDashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Doctor Profile Section - Full Width at Top */}
+        {/* Doctor Profile Section */}
         <Card className="mb-8 shadow-2xl border-blue-200 bg-white animate-fade-in overflow-hidden">
           <div className="bg-gradient-to-r from-[#2563EB] to-[#3B82F6] h-32"></div>
           <CardContent className="p-8 -mt-16">
@@ -217,21 +367,99 @@ const DoctorDashboard = () => {
                   </Badge>
                 </div>
                 <div className="grid md:grid-cols-3 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 shadow-md">
                     <p className="text-sm text-gray-600 mb-1">Contact</p>
                     <p className="font-bold text-gray-800 text-lg">+91 98765-43211</p>
                   </div>
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 shadow-md">
                     <p className="text-sm text-gray-600 mb-1">Available Hours</p>
                     <p className="font-bold text-gray-800 text-lg">9:00 AM - 6:00 PM</p>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow">
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 shadow-md">
                     <p className="text-sm text-gray-600 mb-1">Specialization</p>
                     <p className="font-bold text-gray-800 text-lg">General Medicine</p>
                   </div>
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Incoming Appointments from Hospital */}
+        <Card className="mb-8 shadow-xl border-blue-100">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-green-50">
+            <CardTitle className="flex items-center gap-2 text-2xl text-gray-800">
+              <Calendar className="h-6 w-6 text-[#2563EB]" />
+              Incoming Appointments ({transferredAppointments.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {transferredAppointments.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No appointments transferred from hospital yet</p>
+            ) : (
+              <div className="space-y-4">
+                {transferredAppointments.map((apt) => (
+                  <Card key={apt.id} className="border-2 border-blue-100 hover:border-[#2563EB] transition-all">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <p className="font-bold text-xl text-gray-800">{apt.patientName}</p>
+                          <p className="text-sm text-muted-foreground">{apt.hospital}</p>
+                          <p className="text-sm text-muted-foreground">Department: {apt.department || 'General'}</p>
+                          <p className="text-sm text-muted-foreground">{apt.date} at {apt.time}</p>
+                        </div>
+                        <Badge 
+                          className={
+                            apt.status === 'checked' ? 'bg-green-600' : 
+                            apt.status === 'referred' ? 'bg-purple-600' : 
+                            'bg-blue-600'
+                          }
+                        >
+                          {apt.status === 'transferred' ? 'Pending Consultation' : apt.status}
+                        </Badge>
+                      </div>
+                      
+                      {apt.status === 'transferred' && (
+                        <div className="flex flex-wrap gap-2 pt-3 border-t">
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleMarkChecked(apt)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Check className="mr-1 h-4 w-4" />
+                            Mark as Checked
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            onClick={() => openCameraForOPD(apt)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Camera className="mr-1 h-4 w-4" />
+                            Upload OPD Card
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => openReferModal(apt)}
+                            className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                          >
+                            <ArrowLeft className="mr-1 h-4 w-4" />
+                            Refer to Hospital
+                          </Button>
+                        </div>
+                      )}
+
+                      {apt.opdCardImage && (
+                        <div className="mt-3 pt-3 border-t">
+                          <p className="text-sm font-medium text-green-700 mb-2">OPD Card Uploaded ✓</p>
+                          <img src={apt.opdCardImage} alt="OPD Card" className="max-h-32 rounded-lg border" />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -285,114 +513,71 @@ const DoctorDashboard = () => {
           </CardContent>
         </Card>
 
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          {/* Appointments */}
-          <Card className="shadow-xl border-blue-100 hover:shadow-2xl transition-shadow">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-              <CardTitle className="flex items-center gap-2 text-xl text-gray-800">
-                <Calendar className="h-5 w-5 text-[#2563EB]" />
-                Today's Appointments
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-4">
-              {appointments.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No appointments today</p>
+        {/* Online Consultation - Patient Messages */}
+        <Card className="shadow-xl border-blue-100 hover:shadow-2xl transition-shadow">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
+            <CardTitle className="flex items-center gap-2 text-xl text-gray-800">
+              <MessageSquare className="h-5 w-5 text-[#10B981]" />
+              Online Consultation - Patient Messages
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="space-y-3 mb-4">
+              {chats.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No messages yet</p>
               ) : (
-                appointments.map((apt) => (
-                  <div key={apt.id} className="border-2 border-blue-100 rounded-xl p-4 space-y-2 hover:border-[#2563EB] transition-all bg-white shadow-sm hover:shadow-md">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-bold text-gray-800 text-lg">{apt.patientName}</p>
-                        <p className="text-sm text-gray-600">{apt.hospital}</p>
-                        <p className="text-sm text-gray-600">{apt.date} at {apt.time}</p>
-                      </div>
-                      <Badge 
-                        variant={apt.status === 'checked' ? 'default' : apt.status === 'referred' ? 'secondary' : 'outline'}
-                        className={apt.status === 'checked' ? 'bg-[#10B981]' : ''}
-                      >
-                        {apt.status}
-                      </Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => updateAppointmentStatus(apt.id, 'checked')} className="bg-[#2563EB] hover:bg-[#1D4ED8]">
-                        Mark Checked
-                      </Button>
-                      <Button size="sm" variant="secondary" onClick={() => updateAppointmentStatus(apt.id, 'referred')} className="bg-[#D1FAE5] text-green-800 hover:bg-green-200">
-                        Refer
-                      </Button>
-                    </div>
+                chats.map((chat) => (
+                  <div
+                    key={chat.id}
+                    className={`border-2 rounded-xl p-3 cursor-pointer hover:bg-blue-50 transition-all ${
+                      selectedChat?.id === chat.id ? 'bg-blue-100 border-[#2563EB]' : 'border-blue-100'
+                    }`}
+                    onClick={() => setSelectedChat(chat)}
+                  >
+                    <p className="font-semibold text-gray-800">{chat.patientName}</p>
+                    <p className="text-sm text-gray-600">
+                      {chat.messages[chat.messages.length - 1]?.text.slice(0, 50)}...
+                    </p>
                   </div>
                 ))
               )}
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Online Consultation - Patient Messages */}
-          <Card className="shadow-xl border-blue-100 hover:shadow-2xl transition-shadow">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
-              <CardTitle className="flex items-center gap-2 text-xl text-gray-800">
-                <MessageSquare className="h-5 w-5 text-[#10B981]" />
-                Online Consultation - Patient Messages
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-3 mb-4">
-                {chats.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No messages yet</p>
-                ) : (
-                  chats.map((chat) => (
+            {selectedChat && (
+              <div className="border-t-2 pt-4">
+                <h4 className="font-semibold mb-3 text-gray-800 text-lg">Chat with {selectedChat.patientName}</h4>
+                <div className="space-y-2 mb-3 max-h-60 overflow-y-auto">
+                  {selectedChat.messages.map((msg, idx) => (
                     <div
-                      key={chat.id}
-                      className={`border-2 rounded-xl p-3 cursor-pointer hover:bg-blue-50 transition-all ${
-                        selectedChat?.id === chat.id ? 'bg-blue-100 border-[#2563EB]' : 'border-blue-100'
+                      key={idx}
+                      className={`p-3 rounded-xl transition-all ${
+                        msg.from === 'patient' 
+                          ? 'bg-gray-100 text-gray-800' 
+                          : 'bg-[#2563EB] text-white ml-8 shadow-md'
                       }`}
-                      onClick={() => setSelectedChat(chat)}
                     >
-                      <p className="font-semibold text-gray-800">{chat.patientName}</p>
-                      <p className="text-sm text-gray-600">
-                        {chat.messages[chat.messages.length - 1]?.text.slice(0, 50)}...
+                      <p className="text-sm">{msg.text}</p>
+                      <p className="text-xs opacity-70 mt-1">
+                        {new Date(msg.timestamp).toLocaleTimeString()}
                       </p>
                     </div>
-                  ))
-                )}
-              </div>
-
-              {selectedChat && (
-                <div className="border-t-2 pt-4">
-                  <h4 className="font-semibold mb-3 text-gray-800 text-lg">Chat with {selectedChat.patientName}</h4>
-                  <div className="space-y-2 mb-3 max-h-60 overflow-y-auto">
-                    {selectedChat.messages.map((msg, idx) => (
-                      <div
-                        key={idx}
-                        className={`p-3 rounded-xl transition-all ${
-                          msg.from === 'patient' 
-                            ? 'bg-gray-100 text-gray-800' 
-                            : 'bg-[#2563EB] text-white ml-8 shadow-md'
-                        }`}
-                      >
-                        <p className="text-sm">{msg.text}</p>
-                        <p className="text-xs opacity-70 mt-1">
-                          {new Date(msg.timestamp).toLocaleTimeString()}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Textarea
-                      value={replyMessage}
-                      onChange={(e) => setReplyMessage(e.target.value)}
-                      placeholder="Type your reply..."
-                      className="flex-1 border-blue-200 focus:border-[#2563EB]"
-                    />
-                    <Button onClick={handleSendReply} size="icon" className="bg-[#2563EB] hover:bg-[#1D4ED8] hover:scale-105 transition-transform">
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                <div className="flex gap-2">
+                  <Textarea
+                    value={replyMessage}
+                    onChange={(e) => setReplyMessage(e.target.value)}
+                    placeholder="Type your reply..."
+                    className="flex-1 border-blue-200 focus:border-[#2563EB]"
+                  />
+                  <Button onClick={handleSendReply} size="icon" className="bg-[#2563EB] hover:bg-[#1D4ED8]">
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </main>
 
       {/* Patient History Modal */}
@@ -432,7 +617,7 @@ const DoctorDashboard = () => {
               Generate Prescription - {prescriptionPatient?.name}
             </DialogTitle>
             <DialogDescription>
-              Fill in the details to create a new prescription (sample data)
+              Fill in the details to create a new prescription
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -468,7 +653,7 @@ const DoctorDashboard = () => {
               <Textarea
                 value={prescriptionData.tests}
                 onChange={(e) => setPrescriptionData({...prescriptionData, tests: e.target.value})}
-                placeholder="Enter recommended tests (e.g., Blood Test, X-Ray)..."
+                placeholder="Enter recommended tests..."
                 className="border-blue-200 focus:border-[#2563EB]"
               />
             </div>
@@ -477,22 +662,145 @@ const DoctorDashboard = () => {
               <Textarea
                 value={prescriptionData.dietTips}
                 onChange={(e) => setPrescriptionData({...prescriptionData, dietTips: e.target.value})}
-                placeholder="Enter diet tips (e.g., Drink water, Light diet, Rest)..."
+                placeholder="Enter diet tips..."
                 className="border-blue-200 focus:border-[#2563EB]"
               />
             </div>
             <div className="flex gap-2 pt-4">
               <Button 
                 onClick={handleSavePrescription} 
-                className="flex-1 bg-[#2563EB] hover:bg-[#1D4ED8] hover:scale-105 transition-transform"
+                className="flex-1 bg-[#2563EB] hover:bg-[#1D4ED8]"
               >
                 Save Prescription
               </Button>
               <Button 
                 onClick={() => setShowPrescriptionModal(false)} 
                 variant="outline" 
-                className="flex-1 border-blue-200"
+                className="flex-1"
               >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* OPD Card Camera Modal */}
+      <Dialog open={showCameraModal} onOpenChange={(open) => {
+        if (!open) stopCamera();
+        setShowCameraModal(open);
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="h-5 w-5 text-primary" />
+              Upload OPD Card
+            </DialogTitle>
+            <DialogDescription>
+              Patient: {selectedAppointmentForOPD?.patientName}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {!capturedImage ? (
+              <>
+                {isCameraActive ? (
+                  <div className="relative">
+                    <video 
+                      ref={videoRef} 
+                      autoPlay 
+                      playsInline 
+                      className="w-full rounded-lg border"
+                    />
+                    <Button 
+                      onClick={capturePhoto}
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white text-primary hover:bg-gray-100"
+                    >
+                      <Camera className="mr-2 h-4 w-4" />
+                      Capture
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <Button onClick={startCamera} className="w-full">
+                      <Camera className="mr-2 h-4 w-4" />
+                      Open Camera
+                    </Button>
+                    <div className="text-center text-muted-foreground">or</div>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload from Gallery
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="space-y-4">
+                <img 
+                  src={capturedImage} 
+                  alt="Captured OPD Card" 
+                  className="w-full rounded-lg border"
+                />
+                <div className="flex gap-2">
+                  <Button onClick={saveOPDCard} className="flex-1 bg-green-600 hover:bg-green-700">
+                    <Check className="mr-2 h-4 w-4" />
+                    Save & Send to Patient
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => {
+                      setCapturedImage(null);
+                      setIsCameraActive(false);
+                    }}
+                  >
+                    Retake
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <canvas ref={canvasRef} className="hidden" />
+        </DialogContent>
+      </Dialog>
+
+      {/* Refer to Hospital Modal */}
+      <Dialog open={showReferModal} onOpenChange={setShowReferModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Refer Patient to Hospital</DialogTitle>
+            <DialogDescription>
+              Patient: {referAppointment?.patientName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Reason for Referral *</Label>
+              <Textarea
+                value={referReason}
+                onChange={(e) => setReferReason(e.target.value)}
+                placeholder="Enter reason for referral (e.g., needs admission, further tests, specialist consultation)..."
+                className="mt-2"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleReferToHospital} className="flex-1 bg-purple-600 hover:bg-purple-700">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Refer to Hospital
+              </Button>
+              <Button onClick={() => setShowReferModal(false)} variant="outline" className="flex-1">
                 Cancel
               </Button>
             </div>

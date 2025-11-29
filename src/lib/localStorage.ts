@@ -16,9 +16,40 @@ export interface Appointment {
   patientName: string;
   doctor: string;
   hospital: string;
+  department: string;
   date: string;
   time: string;
-  status: 'pending' | 'checked' | 'referred';
+  status: 'pending' | 'transferred' | 'checked' | 'referred' | 'rescheduled' | 'cancelled';
+  paymentStatus: 'paid' | 'pending';
+  amount: number;
+  transferredToDoctor?: boolean;
+  opdCardImage?: string;
+  rescheduleReason?: string;
+  cancelReason?: string;
+}
+
+export interface PatientNotification {
+  id: string;
+  userId: string;
+  type: 'transfer' | 'reschedule' | 'cancel' | 'prescription' | 'referral';
+  message: string;
+  appointmentId?: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface HospitalReferral {
+  id: string;
+  appointmentId: string;
+  patientName: string;
+  patientId: string;
+  doctorName: string;
+  reason: string;
+  status: 'pending' | 'bed_assigned' | 'completed';
+  bedNumber?: string;
+  notes?: string;
+  paymentCollected?: number;
+  createdAt: string;
 }
 
 export interface Medicine {
@@ -70,6 +101,7 @@ export interface Prescription {
   medicines: string;
   diagnosis: string;
   notes: string;
+  opdImage?: string;
 }
 
 export interface PatientHistory {
@@ -479,6 +511,71 @@ export const addMedicineReservation = (reservation: Omit<MedicineReservation, 'i
   reservations.push(newReservation);
   localStorage.setItem('medicineReservations', JSON.stringify(reservations));
   return newReservation;
+};
+
+// Notification utilities
+export const getNotifications = (userId: string): PatientNotification[] => {
+  const notifications: PatientNotification[] = JSON.parse(localStorage.getItem('patientNotifications') || '[]');
+  return notifications.filter(n => n.userId === userId);
+};
+
+export const addNotification = (notification: Omit<PatientNotification, 'id' | 'read' | 'createdAt'>): void => {
+  const notifications: PatientNotification[] = JSON.parse(localStorage.getItem('patientNotifications') || '[]');
+  const newNotification: PatientNotification = {
+    ...notification,
+    id: Date.now().toString(),
+    read: false,
+    createdAt: new Date().toISOString()
+  };
+  notifications.push(newNotification);
+  localStorage.setItem('patientNotifications', JSON.stringify(notifications));
+};
+
+export const markNotificationRead = (id: string): void => {
+  const notifications: PatientNotification[] = JSON.parse(localStorage.getItem('patientNotifications') || '[]');
+  const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n);
+  localStorage.setItem('patientNotifications', JSON.stringify(updated));
+};
+
+// Hospital Referral utilities
+export const getHospitalReferrals = (): HospitalReferral[] => {
+  return JSON.parse(localStorage.getItem('hospitalReferrals') || '[]');
+};
+
+export const addHospitalReferral = (referral: Omit<HospitalReferral, 'id' | 'status' | 'createdAt'>): void => {
+  const referrals = getHospitalReferrals();
+  const newReferral: HospitalReferral = {
+    ...referral,
+    id: Date.now().toString(),
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+  referrals.push(newReferral);
+  localStorage.setItem('hospitalReferrals', JSON.stringify(referrals));
+};
+
+export const updateHospitalReferral = (id: string, updates: Partial<HospitalReferral>): void => {
+  const referrals = getHospitalReferrals();
+  const updated = referrals.map(r => r.id === id ? { ...r, ...updates } : r);
+  localStorage.setItem('hospitalReferrals', JSON.stringify(updated));
+};
+
+// Update appointment with more options
+export const updateAppointment = (id: string, updates: Partial<Appointment>): void => {
+  const appointments = getAppointments();
+  const updated = appointments.map(apt => apt.id === id ? { ...apt, ...updates } : apt);
+  localStorage.setItem('appointments', JSON.stringify(updated));
+};
+
+// OPD Card/Prescription Image utilities
+export const addOPDPrescription = (prescription: Omit<Prescription, 'id'> & { opdImage?: string }): void => {
+  const prescriptions = getPrescriptions();
+  const newPrescription = {
+    ...prescription,
+    id: Date.now().toString()
+  };
+  prescriptions.push(newPrescription);
+  localStorage.setItem('prescriptions', JSON.stringify(prescriptions));
 };
 
 // Initialize on import
