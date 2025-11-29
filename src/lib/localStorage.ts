@@ -170,7 +170,7 @@ const initializeSampleData = () => {
       {
         id: '1',
         role: 'patient',
-        name: 'Ramesh Kumar',
+        name: 'Anupma',
         phone: '9876543210',
         village: 'Dhanpur',
         email: 'patient1@test',
@@ -226,7 +226,7 @@ const initializeSampleData = () => {
       {
         id: '1',
         patientId: '1',
-        patientName: 'Ramesh Kumar',
+        patientName: 'Anupma',
         visitDate: '2025-11-15',
         diagnosis: 'Seasonal Flu',
         prescription: 'Paracetamol 500mg, Rest',
@@ -235,7 +235,7 @@ const initializeSampleData = () => {
       {
         id: '2',
         patientId: '1',
-        patientName: 'Ramesh Kumar',
+        patientName: 'Anupma',
         visitDate: '2025-10-20',
         diagnosis: 'Stomach Upset',
         prescription: 'Antacid Tablets, Light Diet',
@@ -250,7 +250,7 @@ const initializeSampleData = () => {
       {
         id: 'ord-001',
         patientId: '1',
-        patientName: 'Ramesh Kumar',
+        patientName: 'Anupma',
         prescriptionId: 'presc-001',
         medicines: 'Paracetamol 500mg (Qty: 2) - ₹100',
         address: '123 Main Street, Dhanpur, PIN: 123456',
@@ -271,12 +271,12 @@ const initializeSampleData = () => {
       {
         id: 'res-001',
         patientId: '1',
-        patientName: 'Ramesh Kumar',
+        patientName: 'Anupma',
         medicineName: 'Cough Syrup',
         quantity: 2,
         totalPrice: 170,
         shopName: 'Dhanpur Medical Store',
-        customerName: 'Ramesh Kumar',
+        customerName: 'Anupma',
         address: '123 Main Street, Dhanpur',
         pincode: '123456',
         phone: '9876543210',
