@@ -13,6 +13,7 @@ import FamilyInsurance from "@/components/patient/FamilyInsurance";
 import AppointmentHistory from "@/components/patient/AppointmentHistory";
 import EmergencyContacts from "@/components/patient/EmergencyContacts";
 import PrescriptionView from "@/components/patient/PrescriptionView";
+import NotificationsPanel from "@/components/patient/NotificationsPanel";
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
@@ -58,6 +59,7 @@ const PatientDashboard = () => {
 
         <div className="space-y-8">
           <WelcomeCard user={user} />
+          <NotificationsPanel userId={user.id} />
           <PrescriptionView userId={user.id} />
           <SymptomChecker />
           <div className="grid md:grid-cols-2 gap-6">
