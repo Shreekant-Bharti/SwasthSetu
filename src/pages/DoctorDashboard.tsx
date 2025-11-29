@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCurrentUser, logout, getAppointments, getChats, addChatMessage, getPatientHistory, addPrescription, addPatientHistory, updateAppointment, addNotification, addHospitalReferral, Appointment, Chat } from "@/lib/localStorage";
+import { getCurrentUser, logout, getAppointments, getChats, addChatMessage, addPrescription, addPatientHistory, updateAppointment, addNotification, addHospitalReferral, Appointment, Chat } from "@/lib/localStorage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { LogOut, Calendar, MessageSquare, Send, FileText, User, Stethoscope, Heart, Camera, Check, ArrowLeft, Upload } from "lucide-react";
+import { LogOut, Calendar, MessageSquare, Send, FileText, User, Stethoscope, Heart, Camera, Check, ArrowLeft } from "lucide-react";
 import drSnehh from "@/assets/dr-snehh.jpg";
 import { toast } from "sonner";
 
@@ -45,14 +45,22 @@ const DoctorDashboard = () => {
     dietTips: ''
   });
 
-  // OPD Card Camera
-  const [showCameraModal, setShowCameraModal] = useState(false);
-  const [selectedAppointmentForOPD, setSelectedAppointmentForOPD] = useState<Appointment | null>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isCameraActive, setIsCameraActive] = useState(false);
+  // Mark as Checked Options
+  const [showMarkCheckedModal, setShowMarkCheckedModal] = useState(false);
+  const [selectedAppointmentForAction, setSelectedAppointmentForAction] = useState<Appointment | null>(null);
+  
+  // OPD Coming Soon Modal
+  const [showOPDComingSoon, setShowOPDComingSoon] = useState(false);
+  
+  // Prescription for Appointment
+  const [showAppointmentPrescription, setShowAppointmentPrescription] = useState(false);
+  const [appointmentPrescriptionData, setAppointmentPrescriptionData] = useState({
+    symptoms: '',
+    diagnosis: '',
+    medicines: '',
+    tests: '',
+    dietTips: ''
+  });
 
   // Refer Modal
   const [showReferModal, setShowReferModal] = useState(false);
@@ -122,107 +130,64 @@ const DoctorDashboard = () => {
     navigate('/');
   };
 
-  const handleMarkChecked = (appointment: Appointment) => {
-    updateAppointment(appointment.id, { status: 'checked' });
-    
-    addNotification({
-      userId: appointment.userId,
-      type: 'prescription',
-      message: `Your consultation with Dr. Snehh Kumar is complete. Check My Prescriptions for details.`,
-      appointmentId: appointment.id
+  const openMarkCheckedOptions = (appointment: Appointment) => {
+    setSelectedAppointmentForAction(appointment);
+    setShowMarkCheckedModal(true);
+  };
+
+  const handleUploadOPDCard = () => {
+    setShowMarkCheckedModal(false);
+    setShowOPDComingSoon(true);
+  };
+
+  const handleGeneratePrescription = () => {
+    setShowMarkCheckedModal(false);
+    setAppointmentPrescriptionData({
+      symptoms: '',
+      diagnosis: '',
+      medicines: '',
+      tests: '',
+      dietTips: ''
     });
-    
-    toast.success("Appointment marked as checked");
-    loadData();
+    setShowAppointmentPrescription(true);
   };
 
-  const openCameraForOPD = async (appointment: Appointment) => {
-    setSelectedAppointmentForOPD(appointment);
-    setCapturedImage(null);
-    setShowCameraModal(true);
-  };
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setIsCameraActive(true);
-      }
-    } catch (error) {
-      console.error("Camera error:", error);
-      toast.error("Could not access camera. Please use file upload instead.");
+  const handleSaveAppointmentPrescription = () => {
+    if (!appointmentPrescriptionData.diagnosis || !appointmentPrescriptionData.medicines) {
+      toast.error("Please fill diagnosis and medicines");
+      return;
     }
-  };
 
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-      setIsCameraActive(false);
-    }
-  };
+    if (!selectedAppointmentForAction) return;
 
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const context = canvasRef.current.getContext('2d');
-      if (context) {
-        canvasRef.current.width = videoRef.current.videoWidth;
-        canvasRef.current.height = videoRef.current.videoHeight;
-        context.drawImage(videoRef.current, 0, 0);
-        const imageData = canvasRef.current.toDataURL('image/jpeg', 0.8);
-        setCapturedImage(imageData);
-        stopCamera();
-      }
-    }
-  };
+    const notesText = [
+      appointmentPrescriptionData.symptoms ? `Symptoms: ${appointmentPrescriptionData.symptoms}` : '',
+      appointmentPrescriptionData.tests ? `Tests: ${appointmentPrescriptionData.tests}` : '',
+      appointmentPrescriptionData.dietTips ? `Diet Tips: ${appointmentPrescriptionData.dietTips}` : ''
+    ].filter(Boolean).join('. ');
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCapturedImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const saveOPDCard = () => {
-    if (!capturedImage || !selectedAppointmentForOPD) return;
-
-    // Update appointment with OPD card image
-    updateAppointment(selectedAppointmentForOPD.id, { 
-      opdCardImage: capturedImage,
-      status: 'checked'
-    });
-
-    // Create prescription with the OPD card image
     addPrescription({
-      patientId: selectedAppointmentForOPD.userId,
-      patientName: selectedAppointmentForOPD.patientName,
+      patientId: selectedAppointmentForAction.userId,
+      patientName: selectedAppointmentForAction.patientName,
       doctorName: 'Dr. Snehh Kumar',
       date: new Date().toISOString().split('T')[0],
-      medicines: 'See OPD Card Image',
-      diagnosis: 'Consultation Complete',
-      notes: 'OPD Card Uploaded',
-      opdImage: capturedImage
-    } as any);
-
-    addNotification({
-      userId: selectedAppointmentForOPD.userId,
-      type: 'prescription',
-      message: `Dr. Snehh Kumar has uploaded your OPD prescription card. Check My Prescriptions to view and download.`,
-      appointmentId: selectedAppointmentForOPD.id
+      medicines: appointmentPrescriptionData.medicines,
+      diagnosis: appointmentPrescriptionData.diagnosis,
+      notes: notesText
     });
 
-    toast.success("OPD Card saved and sent to patient!");
-    setShowCameraModal(false);
-    setCapturedImage(null);
+    updateAppointment(selectedAppointmentForAction.id, { status: 'checked' });
+
+    addNotification({
+      userId: selectedAppointmentForAction.userId,
+      type: 'prescription',
+      message: `Dr. Snehh Kumar has generated your prescription. Check My Prescriptions to view and download.`,
+      appointmentId: selectedAppointmentForAction.id
+    });
+
+    toast.success("Prescription saved and sent to patient!");
+    setShowAppointmentPrescription(false);
+    setSelectedAppointmentForAction(null);
     loadData();
   };
 
@@ -425,19 +390,11 @@ const DoctorDashboard = () => {
                         <div className="flex flex-wrap gap-2 pt-3 border-t">
                           <Button 
                             size="sm" 
-                            onClick={() => handleMarkChecked(apt)}
+                            onClick={() => openMarkCheckedOptions(apt)}
                             className="bg-green-600 hover:bg-green-700"
                           >
                             <Check className="mr-1 h-4 w-4" />
                             Mark as Checked
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            onClick={() => openCameraForOPD(apt)}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Camera className="mr-1 h-4 w-4" />
-                            Upload OPD Card
                           </Button>
                           <Button 
                             size="sm" 
@@ -687,95 +644,148 @@ const DoctorDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* OPD Card Camera Modal */}
-      <Dialog open={showCameraModal} onOpenChange={(open) => {
-        if (!open) stopCamera();
-        setShowCameraModal(open);
-      }}>
+      {/* Mark as Checked Options Modal */}
+      <Dialog open={showMarkCheckedModal} onOpenChange={setShowMarkCheckedModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Check className="h-5 w-5 text-green-600" />
+              Mark as Checked
+            </DialogTitle>
+            <DialogDescription>
+              Patient: {selectedAppointmentForAction?.patientName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <p className="text-sm text-muted-foreground">Choose an action:</p>
+            <div className="flex flex-col gap-3">
+              <Button 
+                onClick={handleUploadOPDCard}
+                variant="outline"
+                className="w-full justify-start h-14 border-blue-200 hover:bg-blue-50"
+              >
+                <Camera className="mr-3 h-5 w-5 text-blue-600" />
+                <div className="text-left">
+                  <p className="font-medium">Upload OPD Card</p>
+                  <p className="text-xs text-muted-foreground">Capture or upload OPD card image</p>
+                </div>
+              </Button>
+              <Button 
+                onClick={handleGeneratePrescription}
+                variant="outline"
+                className="w-full justify-start h-14 border-green-200 hover:bg-green-50"
+              >
+                <FileText className="mr-3 h-5 w-5 text-green-600" />
+                <div className="text-left">
+                  <p className="font-medium">Generate Prescription</p>
+                  <p className="text-xs text-muted-foreground">Write medicines, tests, advice</p>
+                </div>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* OPD Coming Soon Modal */}
+      <Dialog open={showOPDComingSoon} onOpenChange={setShowOPDComingSoon}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-blue-600">
+              <Camera className="h-5 w-5" />
+              Feature Coming Soon...
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-6">
+            <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+              <Camera className="h-8 w-8 text-blue-600" />
+            </div>
+            <p className="text-muted-foreground">
+              OPD Card upload feature will be available soon!
+            </p>
+          </div>
+          <Button 
+            onClick={() => setShowOPDComingSoon(false)} 
+            className="w-full bg-blue-600 hover:bg-blue-700"
+          >
+            OK
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Appointment Prescription Modal */}
+      <Dialog open={showAppointmentPrescription} onOpenChange={setShowAppointmentPrescription}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5 text-primary" />
-              Upload OPD Card
+              <FileText className="h-5 w-5 text-green-600" />
+              Generate Prescription
             </DialogTitle>
             <DialogDescription>
-              Patient: {selectedAppointmentForOPD?.patientName}
+              Patient: {selectedAppointmentForAction?.patientName}
             </DialogDescription>
           </DialogHeader>
-          
           <div className="space-y-4">
-            {!capturedImage ? (
-              <>
-                {isCameraActive ? (
-                  <div className="relative">
-                    <video 
-                      ref={videoRef} 
-                      autoPlay 
-                      playsInline
-                      muted
-                      className="w-full rounded-lg border min-h-[300px] bg-black"
-                    />
-                    <Button 
-                      onClick={capturePhoto}
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white text-primary hover:bg-gray-100"
-                    >
-                      <Camera className="mr-2 h-4 w-4" />
-                      Capture
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <Button onClick={startCamera} className="w-full">
-                      <Camera className="mr-2 h-4 w-4" />
-                      Open Camera
-                    </Button>
-                    <div className="text-center text-muted-foreground">or</div>
-                    <input 
-                      type="file" 
-                      accept="image/*"
-                      ref={fileInputRef}
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload from Gallery
-                    </Button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="space-y-4">
-                <img 
-                  src={capturedImage} 
-                  alt="Captured OPD Card" 
-                  className="w-full rounded-lg border"
-                />
-                <div className="flex gap-2">
-                  <Button onClick={saveOPDCard} className="flex-1 bg-green-600 hover:bg-green-700">
-                    <Check className="mr-2 h-4 w-4" />
-                    Save & Send to Patient
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => {
-                      setCapturedImage(null);
-                      setIsCameraActive(false);
-                    }}
-                  >
-                    Retake
-                  </Button>
-                </div>
-              </div>
-            )}
+            <div>
+              <Label className="text-gray-700">Symptoms</Label>
+              <Textarea
+                value={appointmentPrescriptionData.symptoms}
+                onChange={(e) => setAppointmentPrescriptionData({...appointmentPrescriptionData, symptoms: e.target.value})}
+                placeholder="Enter patient symptoms..."
+                className="border-green-200 focus:border-green-500"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700">Diagnosis *</Label>
+              <Textarea
+                value={appointmentPrescriptionData.diagnosis}
+                onChange={(e) => setAppointmentPrescriptionData({...appointmentPrescriptionData, diagnosis: e.target.value})}
+                placeholder="Enter diagnosis..."
+                className="border-green-200 focus:border-green-500"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700">Medicines *</Label>
+              <Textarea
+                value={appointmentPrescriptionData.medicines}
+                onChange={(e) => setAppointmentPrescriptionData({...appointmentPrescriptionData, medicines: e.target.value})}
+                placeholder="Enter medicines with dosage..."
+                className="border-green-200 focus:border-green-500"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700">Tests (if any)</Label>
+              <Textarea
+                value={appointmentPrescriptionData.tests}
+                onChange={(e) => setAppointmentPrescriptionData({...appointmentPrescriptionData, tests: e.target.value})}
+                placeholder="Enter recommended tests..."
+                className="border-green-200 focus:border-green-500"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700">Diet & Lifestyle Tips</Label>
+              <Textarea
+                value={appointmentPrescriptionData.dietTips}
+                onChange={(e) => setAppointmentPrescriptionData({...appointmentPrescriptionData, dietTips: e.target.value})}
+                placeholder="Enter diet tips..."
+                className="border-green-200 focus:border-green-500"
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={handleSaveAppointmentPrescription} 
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                Save & Send to Patient
+              </Button>
+              <Button 
+                onClick={() => setShowAppointmentPrescription(false)} 
+                variant="outline" 
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
-          
-          <canvas ref={canvasRef} className="hidden" />
         </DialogContent>
       </Dialog>
 
