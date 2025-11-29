@@ -380,6 +380,44 @@ export const getMedicines = (): Medicine[] => {
   return JSON.parse(localStorage.getItem('medicines') || '[]');
 };
 
+export const addMedicine = (medicine: Omit<Medicine, 'id'>): { success: boolean; id?: string; error?: string } => {
+  const medicines = getMedicines();
+  
+  // Check for duplicates (same name, brand, strength)
+  const duplicate = medicines.find(m => 
+    m.name.toLowerCase() === medicine.name.toLowerCase() && 
+    m.shop.toLowerCase() === medicine.shop.toLowerCase()
+  );
+  
+  if (duplicate) {
+    return { success: false, error: 'A medicine with this name already exists in this shop' };
+  }
+  
+  const newMedicine: Medicine = {
+    ...medicine,
+    id: `med-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  };
+  
+  medicines.push(newMedicine);
+  localStorage.setItem('medicines', JSON.stringify(medicines));
+  
+  // Store newly added medicine ID for highlighting
+  const newMedicineIds = JSON.parse(localStorage.getItem('newMedicineIds') || '[]');
+  newMedicineIds.push(newMedicine.id);
+  localStorage.setItem('newMedicineIds', JSON.stringify(newMedicineIds));
+  
+  return { success: true, id: newMedicine.id };
+};
+
+export const getNewMedicineIds = (): string[] => {
+  return JSON.parse(localStorage.getItem('newMedicineIds') || '[]');
+};
+
+export const clearNewMedicineId = (id: string): void => {
+  const ids = getNewMedicineIds().filter(i => i !== id);
+  localStorage.setItem('newMedicineIds', JSON.stringify(ids));
+};
+
 export const updateMedicineStock = (medicineId: string, newStock: number): void => {
   const medicines = getMedicines();
   const updatedMedicines = medicines.map(med =>

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCurrentUser, logout, getMedicines, updateMedicineStock, Medicine, getMedicineOrders, MedicineOrder, getMedicineReservations, MedicineReservation, updateMedicineReservation, updateMedicineOrder } from "@/lib/localStorage";
+import { getCurrentUser, logout, getMedicines, updateMedicineStock, Medicine, getMedicineOrders, MedicineOrder, getMedicineReservations, MedicineReservation, updateMedicineReservation, updateMedicineOrder, addMedicine } from "@/lib/localStorage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { LogOut, Pill, Package, ShoppingBag, Search, CheckCircle, XCircle, Truck, Clock } from "lucide-react";
+import { LogOut, Pill, Package, ShoppingBag, Search, CheckCircle, XCircle, Truck, Clock, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { playSuccessSound, playCancelSound } from "@/lib/sounds";
+import { playSuccessSound, playCancelSound, playVerificationSound, playChimeSound } from "@/lib/sounds";
+import { Progress } from "@/components/ui/progress";
 
 const PharmacyDashboard = () => {
   const navigate = useNavigate();
@@ -27,6 +28,22 @@ const PharmacyDashboard = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancellingOrder, setCancellingOrder] = useState<{ id: string; type: 'reservation' | 'prescription' } | null>(null);
+
+  // Add Medicine modal state
+  const [showAddMedicineModal, setShowAddMedicineModal] = useState(false);
+  const [showVerificationOverlay, setShowVerificationOverlay] = useState(false);
+  const [verificationProgress, setVerificationProgress] = useState(0);
+  const verificationAudioRef = useRef<HTMLAudioElement | null>(null);
+  
+  const [newMedicine, setNewMedicine] = useState({
+    name: '',
+    brand: '',
+    strength: '',
+    price: '',
+    quantity: '',
+    shop: '',
+    description: ''
+  });
 
   useEffect(() => {
     const currentUser = getCurrentUser();
@@ -48,6 +65,7 @@ const PharmacyDashboard = () => {
     const interval = setInterval(() => {
       setOrders(getMedicineOrders());
       setReservations(getMedicineReservations());
+      setMedicines(getMedicines());
     }, 2000);
     return () => clearInterval(interval);
   }, []);
@@ -114,6 +132,94 @@ const PharmacyDashboard = () => {
     setShowCancelModal(false);
     setCancellingOrder(null);
     loadMedicines();
+  };
+
+  const resetAddMedicineForm = () => {
+    setNewMedicine({
+      name: '',
+      brand: '',
+      strength: '',
+      price: '',
+      quantity: '',
+      shop: '',
+      description: ''
+    });
+  };
+
+  const handleAddMedicineSubmit = () => {
+    // Validate required fields
+    if (!newMedicine.name.trim()) {
+      toast.error("Medicine name is required");
+      return;
+    }
+    if (!newMedicine.price || parseFloat(newMedicine.price) <= 0) {
+      toast.error("Please enter a valid price");
+      return;
+    }
+    if (!newMedicine.quantity || parseInt(newMedicine.quantity) <= 0) {
+      toast.error("Please enter a valid quantity");
+      return;
+    }
+    if (!newMedicine.shop.trim()) {
+      toast.error("Shop name is required");
+      return;
+    }
+
+    // Start verification process
+    setShowAddMedicineModal(false);
+    setShowVerificationOverlay(true);
+    setVerificationProgress(0);
+
+    // Play verification sound
+    const audio = playVerificationSound();
+    verificationAudioRef.current = audio;
+    audio.play().catch(() => {});
+
+    // Progress animation over 8 seconds
+    const startTime = Date.now();
+    const duration = 8000;
+    
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min((elapsed / duration) * 100, 100);
+      setVerificationProgress(progress);
+      
+      if (elapsed >= duration) {
+        clearInterval(progressInterval);
+        
+        // Stop verification sound
+        if (verificationAudioRef.current) {
+          verificationAudioRef.current.pause();
+          verificationAudioRef.current = null;
+        }
+
+        // Build medicine name with brand and strength
+        let fullName = newMedicine.name.trim();
+        if (newMedicine.brand) fullName = `${newMedicine.brand} ${fullName}`;
+        if (newMedicine.strength) fullName = `${fullName} ${newMedicine.strength}`;
+
+        // Try to add medicine
+        const result = addMedicine({
+          name: fullName,
+          shop: newMedicine.shop.trim(),
+          stock: parseInt(newMedicine.quantity),
+          price: parseFloat(newMedicine.price)
+        });
+
+        setShowVerificationOverlay(false);
+
+        if (result.success) {
+          playChimeSound();
+          toast.success("Medicine added — now visible to patients", {
+            duration: 4000
+          });
+          loadMedicines();
+          resetAddMedicineForm();
+        } else {
+          toast.warning(result.error || "Failed to add medicine - duplicate detected");
+        }
+      }
+    }, 50);
   };
 
   const getStatusBadge = (status: string) => {
@@ -472,10 +578,19 @@ const PharmacyDashboard = () => {
           <TabsContent value="inventory">
             <Card className="shadow-xl">
               <CardHeader className="bg-gradient-to-r from-blue-100 to-purple-100">
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                  <Package className="h-6 w-6 text-primary" />
-                  Medicine Inventory
-                </CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <Package className="h-6 w-6 text-primary" />
+                    Medicine Inventory
+                  </CardTitle>
+                  <Button 
+                    onClick={() => setShowAddMedicineModal(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white gap-2 animate-scale-in"
+                  >
+                    <Plus className="h-5 w-5" />
+                    Add Medicine
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="pt-6">
                 {/* Search Bar */}
@@ -588,6 +703,127 @@ const PharmacyDashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add Medicine Modal */}
+      <Dialog open={showAddMedicineModal} onOpenChange={setShowAddMedicineModal}>
+        <DialogContent className="sm:max-w-lg animate-scale-in">
+          <DialogHeader>
+            <DialogTitle className="text-xl flex items-center gap-2">
+              <Pill className="h-5 w-5 text-green-600" />
+              Add New Medicine
+            </DialogTitle>
+            <DialogDescription>
+              Fill in the details to add a new medicine to inventory
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            <div>
+              <Label>Medicine Name *</Label>
+              <Input
+                value={newMedicine.name}
+                onChange={(e) => setNewMedicine({...newMedicine, name: e.target.value})}
+                placeholder="e.g., Paracetamol"
+                className="mt-1"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Brand</Label>
+                <Input
+                  value={newMedicine.brand}
+                  onChange={(e) => setNewMedicine({...newMedicine, brand: e.target.value})}
+                  placeholder="e.g., Crocin"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>Strength</Label>
+                <Input
+                  value={newMedicine.strength}
+                  onChange={(e) => setNewMedicine({...newMedicine, strength: e.target.value})}
+                  placeholder="e.g., 500mg"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Price (₹) *</Label>
+                <Input
+                  type="number"
+                  value={newMedicine.price}
+                  onChange={(e) => setNewMedicine({...newMedicine, price: e.target.value})}
+                  placeholder="e.g., 25"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>Quantity *</Label>
+                <Input
+                  type="number"
+                  value={newMedicine.quantity}
+                  onChange={(e) => setNewMedicine({...newMedicine, quantity: e.target.value})}
+                  placeholder="e.g., 100"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Shop Name *</Label>
+              <Input
+                value={newMedicine.shop}
+                onChange={(e) => setNewMedicine({...newMedicine, shop: e.target.value})}
+                placeholder="e.g., Dhanpur Medical Store"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label>Short Description</Label>
+              <Textarea
+                value={newMedicine.description}
+                onChange={(e) => setNewMedicine({...newMedicine, description: e.target.value})}
+                placeholder="Optional description..."
+                className="mt-1"
+                rows={2}
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-4">
+            <Button 
+              onClick={handleAddMedicineSubmit}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Submit
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowAddMedicineModal(false);
+                resetAddMedicineForm();
+              }}
+              variant="outline"
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Verification Overlay */}
+      {showVerificationOverlay && (
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl animate-scale-in">
+            <div className="text-center">
+              <Loader2 className="h-16 w-16 mx-auto text-primary animate-spin mb-4" />
+              <h3 className="text-xl font-bold text-foreground mb-2">Verifying details…</h3>
+              <p className="text-muted-foreground mb-6">Please wait while we verify and add your medicine</p>
+              <Progress value={verificationProgress} className="h-2 mb-2" />
+              <p className="text-sm text-muted-foreground">{Math.round(verificationProgress)}% complete</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
