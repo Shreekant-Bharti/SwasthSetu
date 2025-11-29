@@ -4,9 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { login, register, User } from "@/lib/localStorage";
+import { login, User } from "@/lib/localStorage";
+import { getApprovedCredential } from "@/lib/registrations";
 import { toast } from "sonner";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { playChimeSound } from "@/lib/sounds";
+
+// Import role-specific registration forms
+import PatientRegistrationForm from "@/components/registration/PatientRegistrationForm";
+import DoctorRegistrationForm from "@/components/registration/DoctorRegistrationForm";
+import HospitalRegistrationForm from "@/components/registration/HospitalRegistrationForm";
+import PharmacyRegistrationForm from "@/components/registration/PharmacyRegistrationForm";
+import InsuranceRegistrationForm from "@/components/registration/InsuranceRegistrationForm";
+import AdminRegistrationForm from "@/components/registration/AdminRegistrationForm";
 
 interface AuthModalProps {
   open: boolean;
@@ -18,19 +28,34 @@ interface AuthModalProps {
 const AuthModal = ({ open, onClose, onSuccess, role }: AuthModalProps) => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [regName, setRegName] = useState('');
-  const [regPhone, setRegPhone] = useState('');
-  const [regVillage, setRegVillage] = useState('');
-  const [regEmail, setRegEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate loading for better UX
     setTimeout(() => {
-      const user = login(loginEmail.trim(), loginPassword);
+      // First check default credentials
+      let user = login(loginEmail.trim(), loginPassword);
+      
+      // If not found, check approved registrations
+      if (!user) {
+        const approvedCred = getApprovedCredential(loginEmail.trim());
+        if (approvedCred && approvedCred.password === loginPassword && approvedCred.role === role) {
+          // Create a user object for approved registration
+          user = {
+            id: Date.now().toString(),
+            role: approvedCred.role as User['role'],
+            name: approvedCred.name,
+            phone: '9876543210',
+            village: 'Registered',
+            email: approvedCred.email,
+            status: 'active'
+          };
+          localStorage.setItem('currentUser', JSON.stringify(user));
+        }
+      }
       
       if (user && user.role === role) {
         toast.success("Login successful!", {
@@ -40,7 +65,6 @@ const AuthModal = ({ open, onClose, onSuccess, role }: AuthModalProps) => {
         setIsLoading(false);
         onSuccess(user);
         onClose();
-        // Reset form
         setLoginEmail('');
         setLoginPassword('');
       } else if (user && user.role !== role) {
@@ -59,18 +83,19 @@ const AuthModal = ({ open, onClose, onSuccess, role }: AuthModalProps) => {
     }, 500);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSBQNY6zn77BZGw1No+HyvmsgBTGG0fPTgjMGHm7A7+OZSBQNY6zn77BZGw1No+HyvmsgBTGG0fPTgjMGHm7A7+OZSBQNY6zn77BZGw1No+HyvmsgBTGG0fPTgjMGHm7A7+OZSBQNYazn77BZGw1No+HyvmsgBTGG0fPTgjMGHm7A7+OZSBQNYazn77BZGw=');
-    audio.play().catch(() => {});
-    register({ role, name: regName, phone: regPhone, village: regVillage, email: regEmail });
-    toast.success("Registration submitted! Wait for approval.", { duration: 4000 });
+  const handleRegistrationSuccess = () => {
+    playChimeSound();
+    setShowSuccessPopup(true);
+  };
+
+  const closeSuccessPopup = () => {
+    setShowSuccessPopup(false);
     onClose();
   };
 
   const demoCredentials = {
     patient: { email: 'patient1@test', password: 'patient123' },
-    doctor: { email: 'drsnehh@test', password: 'doctor123' },
+    doctor: { email: 'drsneha@test', password: 'doctor123' },
     hospital: { email: 'hospital@swasthsetu.com', password: 'hospital123' },
     pharmacy: { email: 'pharmacy@swasthsetu.com', password: 'pharmacy123' },
     insurance: { email: 'insurance@swasthsetu.com', password: 'insurance123' },
@@ -86,107 +111,141 @@ const AuthModal = ({ open, onClose, onSuccess, role }: AuthModalProps) => {
     });
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">{role.charAt(0).toUpperCase() + role.slice(1)} Portal</DialogTitle>
-          <DialogDescription>Login or register to access your {role} dashboard</DialogDescription>
-        </DialogHeader>
-        
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="register">Register</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="login" className="space-y-4">
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-email">Email</Label>
-                <Input 
-                  id="login-email"
-                  type="email"
-                  value={loginEmail} 
-                  onChange={(e) => setLoginEmail(e.target.value)} 
-                  placeholder="Enter your email"
-                  required 
-                  className="transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Password</Label>
-                <Input 
-                  id="login-password"
-                  type="password" 
-                  value={loginPassword} 
-                  onChange={(e) => setLoginPassword(e.target.value)} 
-                  placeholder="Enter your password"
-                  required 
-                  className="transition-all"
-                />
-              </div>
-              
-              <div className="bg-muted/50 p-3 rounded-lg border border-border">
-                <p className="text-xs font-semibold text-muted-foreground mb-2">Demo Credentials:</p>
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-mono">
-                    <p>{demoCredentials[role].email}</p>
-                    <p className="text-muted-foreground">{demoCredentials[role].password}</p>
-                  </div>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm"
-                    onClick={fillDemoCredentials}
-                    className="text-xs"
-                  >
-                    Auto-fill
-                  </Button>
-                </div>
-              </div>
+  const roleLabels = {
+    patient: 'Patient',
+    doctor: 'Doctor',
+    hospital: 'Hospital',
+    pharmacy: 'Pharmacy',
+    insurance: 'Insurance',
+    admin: 'Admin'
+  };
 
-              <Button 
-                type="submit" 
-                className="w-full transition-all hover:scale-105" 
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="animate-spin">⏳</span>
-                    Logging in...
-                  </span>
-                ) : (
-                  'Login'
-                )}
-              </Button>
-            </form>
-          </TabsContent>
+  // Render role-specific registration form
+  const renderRegistrationForm = () => {
+    switch (role) {
+      case 'patient':
+        return <PatientRegistrationForm onSuccess={handleRegistrationSuccess} />;
+      case 'doctor':
+        return <DoctorRegistrationForm onSuccess={handleRegistrationSuccess} />;
+      case 'hospital':
+        return <HospitalRegistrationForm onSuccess={handleRegistrationSuccess} />;
+      case 'pharmacy':
+        return <PharmacyRegistrationForm onSuccess={handleRegistrationSuccess} />;
+      case 'insurance':
+        return <InsuranceRegistrationForm onSuccess={handleRegistrationSuccess} />;
+      case 'admin':
+        return <AdminRegistrationForm onSuccess={handleRegistrationSuccess} />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <>
+      <Dialog open={open && !showSuccessPopup} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">{roleLabels[role]} Portal</DialogTitle>
+            <DialogDescription>Login or register to access your {role} dashboard</DialogDescription>
+          </DialogHeader>
           
-          <TabsContent value="register">
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="reg-name">Name</Label>
-                <Input id="reg-name" value={regName} onChange={(e) => setRegName(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="reg-phone">Phone</Label>
-                <Input id="reg-phone" value={regPhone} onChange={(e) => setRegPhone(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="reg-village">Village</Label>
-                <Input id="reg-village" value={regVillage} onChange={(e) => setRegVillage(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="reg-email">Email</Label>
-                <Input id="reg-email" type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} required />
-              </div>
-              <Button type="submit" className="w-full transition-all hover:scale-105">Register</Button>
-            </form>
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="register">Register</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login" className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">Email</Label>
+                  <Input 
+                    id="login-email"
+                    type="email"
+                    value={loginEmail} 
+                    onChange={(e) => setLoginEmail(e.target.value)} 
+                    placeholder="Enter your email"
+                    required 
+                    className="transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Password</Label>
+                  <Input 
+                    id="login-password"
+                    type="password" 
+                    value={loginPassword} 
+                    onChange={(e) => setLoginPassword(e.target.value)} 
+                    placeholder="Enter your password"
+                    required 
+                    className="transition-all"
+                  />
+                </div>
+                
+                <div className="bg-muted/50 p-3 rounded-lg border border-border">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">Demo Credentials:</p>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-mono">
+                      <p>{demoCredentials[role].email}</p>
+                      <p className="text-muted-foreground">{demoCredentials[role].password}</p>
+                    </div>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={fillDemoCredentials}
+                      className="text-xs"
+                    >
+                      Auto-fill
+                    </Button>
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full transition-all hover:scale-105" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="animate-spin">⏳</span>
+                      Logging in...
+                    </span>
+                  ) : (
+                    'Login'
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="register" className="mt-4">
+              {renderRegistrationForm()}
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Popup Modal */}
+      <Dialog open={showSuccessPopup} onOpenChange={closeSuccessPopup}>
+        <DialogContent className="sm:max-w-md animate-scale-in">
+          <div className="text-center py-6">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce">
+              <Clock className="h-8 w-8 text-green-600" />
+            </div>
+            <DialogTitle className="text-2xl font-bold text-green-700 mb-2">
+              Thank you for registering!
+            </DialogTitle>
+            <DialogDescription className="text-base text-muted-foreground mb-6">
+              Your registration has been submitted successfully. Please wait for approval. 
+              You will receive your login credentials once approved.
+            </DialogDescription>
+            <Button onClick={closeSuccessPopup} className="w-full bg-green-600 hover:bg-green-700">
+              Got it!
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
