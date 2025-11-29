@@ -56,46 +56,26 @@ const Hero = () => {
           <div 
             className="inline-block px-8 sm:px-14 md:px-16 py-8 sm:py-10 md:py-12 rounded-[28px] sm:rounded-[36px] mb-8 animate-scale-in"
             style={{ 
-              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.15) 100%)',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.12) 100%)',
               backdropFilter: 'blur(30px)',
               WebkitBackdropFilter: 'blur(30px)',
-              boxShadow: '0 25px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(0, 111, 122, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4)',
-              border: '1.5px solid rgba(255, 255, 255, 0.35)',
+              boxShadow: '0 25px 80px rgba(0, 0, 0, 0.5), 0 0 60px rgba(0, 111, 122, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.3)',
+              border: '1.5px solid rgba(255, 255, 255, 0.3)',
             }}
           >
-            <div className="relative">
-              <h1 
-                className="font-black tracking-wide mb-0 leading-[1.05] relative"
-                style={{ 
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: 'clamp(32px, 10vw, 96px)',
-                  fontWeight: '900',
-                  letterSpacing: '2px',
-                  background: 'linear-gradient(135deg, #00A8B5 0%, #008B9A 35%, #FF8A7A 70%, #FF6B5B 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  filter: 'drop-shadow(0 6px 25px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 50px rgba(255, 255, 255, 0.4))',
-                }}
-              >
-                <span className="relative inline-block">
-                  SwasthSetu
-                  {/* Shimmer Effect */}
-                  <span 
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.7) 50%, transparent 100%)',
-                      backgroundSize: '200% 100%',
-                      animation: 'shimmer 6s ease-in-out infinite',
-                      WebkitBackgroundClip: 'text',
-                      backgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      opacity: 0.5,
-                    }}
-                  />
-                </span>
-              </h1>
-            </div>
+            <h1 
+              className="font-black tracking-wide mb-0 leading-[1.05] title-gradient"
+              style={{ 
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: 'clamp(32px, 10vw, 96px)',
+                fontWeight: '900',
+                letterSpacing: '3px',
+                textShadow: '0 4px 30px rgba(0, 168, 181, 0.6), 0 0 60px rgba(255, 107, 91, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)',
+              }}
+            >
+              <span className="text-[#00B8C5]">Swasth</span>
+              <span className="text-[#FF7A6E]">Setu</span>
+            </h1>
           </div>
 
           {/* Bilingual Tagline */}
