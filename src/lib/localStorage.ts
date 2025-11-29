@@ -296,9 +296,10 @@ export const login = (email: string, password: string): User | null => {
   
   // Updated credentials with proper email format
   const credentials: Record<string, { password: string; email: string; role: User['role']; name: string }> = {
-    'patient1@test': { password: 'patient123', email: 'patient1@test', role: 'patient', name: 'Ramesh Kumar' },
-    'drsnehh@test': { password: 'doctor123', email: 'drsnehh@test', role: 'doctor', name: 'Dr. Snehh Kumar' },
-    'doctor@swasthsetu.com': { password: 'doctor123', email: 'doctor@swasthsetu.com', role: 'doctor', name: 'Dr. Snehh Kumar' },
+    'patient1@test': { password: 'patient123', email: 'patient1@test', role: 'patient', name: 'Anupma' },
+    'drsneha@test': { password: 'doctor123', email: 'drsneha@test', role: 'doctor', name: 'Dr. Sneha Kumari' },
+    'drsnehh@test': { password: 'doctor123', email: 'drsnehh@test', role: 'doctor', name: 'Dr. Sneha Kumari' },
+    'doctor@swasthsetu.com': { password: 'doctor123', email: 'doctor@swasthsetu.com', role: 'doctor', name: 'Dr. Sneha Kumari' },
     'hospital@swasthsetu.com': { password: 'hospital123', email: 'hospital@swasthsetu.com', role: 'hospital', name: 'Hospital Admin' },
     'pharmacy@swasthsetu.com': { password: 'pharmacy123', email: 'pharmacy@swasthsetu.com', role: 'pharmacy', name: 'Pharmacy Manager' },
     'insurance@swasthsetu.com': { password: 'insurance123', email: 'insurance@swasthsetu.com', role: 'insurance', name: 'Insurance Officer' },
