@@ -6,13 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Pill, Search, CheckCircle, CreditCard, Truck } from "lucide-react";
-import { getMedicines, updateMedicineStock, Medicine, addMedicineReservation, getCurrentUser } from "@/lib/localStorage";
+import { getMedicines, updateMedicineStock, Medicine, addMedicineReservation, getCurrentUser, getNewMedicineIds, clearNewMedicineId } from "@/lib/localStorage";
 import { toast } from "sonner";
 
 const MedicineReservation = () => {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
+  const [highlightedIds, setHighlightedIds] = useState<string[]>([]);
   
   // Step 1: Quantity
   const [showQuantityModal, setShowQuantityModal] = useState(false);
@@ -42,7 +43,29 @@ const MedicineReservation = () => {
   const user = getCurrentUser();
 
   useEffect(() => {
-    setMedicines(getMedicines());
+    const loadMedicinesAndHighlights = () => {
+      setMedicines(getMedicines());
+      
+      // Check for newly added medicines to highlight
+      const newIds = getNewMedicineIds();
+      if (newIds.length > 0) {
+        setHighlightedIds(prev => [...new Set([...prev, ...newIds])]);
+        
+        // Clear highlight after 4 seconds
+        newIds.forEach(id => {
+          setTimeout(() => {
+            clearNewMedicineId(id);
+            setHighlightedIds(prev => prev.filter(i => i !== id));
+          }, 4000);
+        });
+      }
+    };
+    
+    loadMedicinesAndHighlights();
+    
+    // Poll for new medicines every 2 seconds
+    const interval = setInterval(loadMedicinesAndHighlights, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   const filteredMedicines = medicines.filter(med => 
@@ -190,10 +213,19 @@ const MedicineReservation = () => {
               filteredMedicines.map((medicine) => (
                 <div
                   key={medicine.id}
-                  className="flex items-center justify-between p-5 border-2 border-blue-100 rounded-xl hover:border-blue-400 hover:shadow-lg transition-all bg-gradient-to-r from-white to-blue-50"
+                  className={`flex items-center justify-between p-5 border-2 rounded-xl hover:border-blue-400 hover:shadow-lg transition-all bg-gradient-to-r from-white to-blue-50 ${
+                    highlightedIds.includes(medicine.id) 
+                      ? 'border-green-400 ring-2 ring-green-300 animate-new-medicine-highlight bg-gradient-to-r from-green-50 to-green-100' 
+                      : 'border-blue-100'
+                  }`}
                 >
                   <div className="flex-1">
-                    <h4 className="font-bold text-xl text-gray-800">{medicine.name}</h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-xl text-gray-800">{medicine.name}</h4>
+                      {highlightedIds.includes(medicine.id) && (
+                        <Badge className="bg-green-500 text-white text-xs animate-pulse">NEW</Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground mt-1">{medicine.shop}</p>
                     <div className="flex items-center gap-3 mt-3">
                       <Badge 
