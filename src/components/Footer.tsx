@@ -14,7 +14,7 @@ const Footer = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-2 group">
               <Heart className="w-8 h-8 text-coral animate-pulse" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-teal to-coral bg-clip-text text-transparent">SwasthSetu <span className="emoji-pulse">🩺</span></span>
+              <span className="text-2xl font-bold bg-gradient-to-r from-teal to-coral bg-clip-text text-transparent">SwasthSetu <span className="emoji-float">🩺</span></span>
             </div>
             <p className="text-white/70 text-sm leading-relaxed">
               Bridging healthcare for rural India with compassion and technology

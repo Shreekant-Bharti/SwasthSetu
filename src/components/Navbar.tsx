@@ -7,7 +7,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
             <Heart className="h-8 w-8 text-primary fill-primary" />
-            <span className="text-xl font-bold text-foreground">SwasthSetu <span className="emoji-pulse">🩺</span></span>
+            <span className="text-xl font-bold text-foreground">SwasthSetu <span className="emoji-float">🩺</span></span>
           </div>
           
           <div className="hidden md:flex items-center gap-6">

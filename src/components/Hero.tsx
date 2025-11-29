@@ -75,6 +75,7 @@ const Hero = () => {
             >
               <span className="text-[#00B8C5]">Swasth</span>
               <span className="text-[#FF7A6E]">Setu</span>
+              <span className="emoji-float ml-2">🩺</span>
             </h1>
           </div>
 
