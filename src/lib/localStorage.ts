@@ -100,8 +100,10 @@ export interface Prescription {
   date: string;
   medicines: string;
   diagnosis: string;
-  notes: string;
+  notes?: string;
   opdImage?: string;
+  tests?: string[];
+  createdAt?: string;
 }
 
 export interface PatientHistory {
