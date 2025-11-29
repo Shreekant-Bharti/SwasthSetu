@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Video, MessageSquare, Loader2 } from "lucide-react";
 import ChatWindow from "./ChatWindow";
-import { toast } from "sonner";
 
 interface OnlineConsultationProps {
   userId: string;
@@ -13,19 +12,42 @@ interface OnlineConsultationProps {
 
 const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
   const [videoLoading, setVideoLoading] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleVideoCall = () => {
     setVideoLoading(true);
+    setShowVideo(false);
     setVideoModalOpen(true);
     
-    // Simulate searching for doctor
+    // After 10 seconds, show and auto-play the video
     setTimeout(() => {
       setVideoLoading(false);
-      toast.error("Dr. Snehh Kumar will be available later — please choose Chat or try again.");
+      setShowVideo(true);
     }, 10000);
   };
+
+  const handleModalClose = (open: boolean) => {
+    if (!open) {
+      setVideoModalOpen(false);
+      setVideoLoading(false);
+      setShowVideo(false);
+      // Stop video if playing
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+    }
+  };
+
+  useEffect(() => {
+    // Auto-play video when showVideo becomes true
+    if (showVideo && videoRef.current) {
+      videoRef.current.play().catch(console.error);
+    }
+  }, [showVideo]);
 
   return (
     <>
@@ -49,23 +71,34 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
         </CardContent>
       </Card>
 
-      <Dialog open={videoModalOpen} onOpenChange={setVideoModalOpen}>
-        <DialogContent>
+      <Dialog open={videoModalOpen} onOpenChange={handleModalClose}>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Video Consultation</DialogTitle>
             <DialogDescription>
-              {videoLoading ? 'Connecting you with Dr. Snehh Kumar...' : 'Connection Status'}
+              {videoLoading ? 'Searching for available doctor...' : 'Connected'}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col items-center justify-center py-8">
+          <div className="flex flex-col items-center justify-center py-4">
             {videoLoading ? (
-              <>
-                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                <p className="text-sm text-muted-foreground">Searching for available doctor...</p>
-              </>
-            ) : (
-              <p className="text-center">Doctor is currently unavailable. Please try chat or book an appointment.</p>
-            )}
+              <div className="flex flex-col items-center gap-4 py-8">
+                <div className="relative">
+                  <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                  <div className="absolute inset-0 h-16 w-16 animate-ping rounded-full bg-primary/20" />
+                </div>
+                <p className="text-lg font-medium text-foreground">Searching for Doctor...</p>
+                <p className="text-sm text-muted-foreground">Please wait while we connect you</p>
+              </div>
+            ) : showVideo ? (
+              <video
+                ref={videoRef}
+                src="/doctor-video.mp4"
+                className="w-full rounded-lg"
+                autoPlay
+                playsInline
+                muted={false}
+              />
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>
