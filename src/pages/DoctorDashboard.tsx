@@ -149,9 +149,11 @@ const DoctorDashboard = () => {
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        await videoRef.current.play();
         setIsCameraActive(true);
       }
     } catch (error) {
+      console.error("Camera error:", error);
       toast.error("Could not access camera. Please use file upload instead.");
     }
   };
@@ -709,8 +711,9 @@ const DoctorDashboard = () => {
                     <video 
                       ref={videoRef} 
                       autoPlay 
-                      playsInline 
-                      className="w-full rounded-lg border"
+                      playsInline
+                      muted
+                      className="w-full rounded-lg border min-h-[300px] bg-black"
                     />
                     <Button 
                       onClick={capturePhoto}
@@ -812,3 +815,4 @@ const DoctorDashboard = () => {
 };
 
 export default DoctorDashboard;
+// Camera fix: Added muted attribute and explicit play() call
