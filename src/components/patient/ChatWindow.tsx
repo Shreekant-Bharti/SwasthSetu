@@ -69,7 +69,7 @@ const ChatWindow = ({ open, onClose, userId, userName }: ChatWindowProps) => {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Chat with Dr. Snehh Kumar</DialogTitle>
+          <DialogTitle>Chat with Dr. Sneha Kumari</DialogTitle>
           <DialogDescription>Get medical advice through chat</DialogDescription>
         </DialogHeader>
 

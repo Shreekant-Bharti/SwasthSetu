@@ -276,7 +276,7 @@ Contact: +91 98765-43211
                   <CardContent className="p-6 space-y-4">
                     <div className="flex justify-between items-start">
                       <div className="flex items-start gap-4">
-                        <img src={drSnehh} alt="Dr. Snehh Kumar" className="w-16 h-16 rounded-full border-2 border-blue-200" />
+                        <img src={drSnehh} alt="Dr. Sneha Kumari" className="w-16 h-16 rounded-full border-2 border-blue-200" />
                         <div>
                           <h3 className="font-bold text-2xl text-gray-800 mb-1">{prescription.diagnosis}</h3>
                           <p className="text-sm text-muted-foreground flex items-center gap-2">
@@ -364,7 +364,7 @@ Contact: +91 98765-43211
               <Card className="border-2 border-purple-200 shadow-md bg-gradient-to-br from-white to-purple-50">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4 mb-4">
-                    <img src={drSnehh} alt="Dr. Snehh Kumar" className="w-20 h-20 rounded-full border-2 border-purple-300" />
+                    <img src={drSnehh} alt="Dr. Sneha Kumari" className="w-20 h-20 rounded-full border-2 border-purple-300" />
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-gray-800">{selectedPrescription.doctorName}</h3>
                       <p className="text-sm text-muted-foreground">General Physician</p>
