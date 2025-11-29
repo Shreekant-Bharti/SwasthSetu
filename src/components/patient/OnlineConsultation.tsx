@@ -11,14 +11,14 @@ interface OnlineConsultationProps {
   userName: string;
 }
 
-type VideoPhase = 'searching' | 'no-doctor' | 'scheduling' | 'connected-video1' | 'connected-video2' | 'connected-video3' | 'done';
+type VideoPhase = 'searching' | 'no-doctor' | 'scheduling' | 'connected-video1' | 'connected-video2' | 'done';
 
 const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
   const [chatOpen, setChatOpen] = useState(false);
   const [videoCallOpen, setVideoCallOpen] = useState(false);
   const [phase, setPhase] = useState<VideoPhase>('searching');
   const [countdown, setCountdown] = useState(7);
-  const [scheduleCountdown, setScheduleCountdown] = useState(60);
+  const [scheduleCountdown, setScheduleCountdown] = useState(15);
   const [micEnabled, setMicEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
@@ -71,7 +71,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       setVideoCallOpen(false);
       setPhase('searching');
       setCountdown(7);
-      setScheduleCountdown(60);
+      setScheduleCountdown(15);
       setIsClosing(false);
       setMicEnabled(true);
       setCameraEnabled(true);
@@ -103,13 +103,8 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     
     if (currentPhase === 'connected-video1') {
       setPhase('connected-video2');
-      hasSpokenRef.current = false;
       setVideoPaused(false);
     } else if (currentPhase === 'connected-video2') {
-      setPhase('connected-video3');
-      hasSpokenRef.current = false;
-      setVideoPaused(false);
-    } else if (currentPhase === 'connected-video3') {
       generatePrescription();
       closeVideoCall();
     }
@@ -122,7 +117,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       return;
     }
     
-    if (currentPhase === 'connected-video3') {
+    if (currentPhase === 'connected-video2') {
       generatePrescription();
       closeVideoCall();
     }
@@ -295,18 +290,23 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     switch (phase) {
       case 'connected-video1': return '/doctor-video-1.mp4';
       case 'connected-video2': return '/doctor-video-2.mp4';
-      case 'connected-video3': return '/doctor-video-3.mp4';
       default: return '';
     }
   };
 
   const toggleMic = () => {
+    const newMicState = !micEnabled;
     if (micStreamRef.current) {
       micStreamRef.current.getAudioTracks().forEach(track => {
-        track.enabled = !micEnabled;
+        track.enabled = newMicState;
       });
     }
-    setMicEnabled(!micEnabled);
+    setMicEnabled(newMicState);
+    
+    // When mic is turned OFF during video1, immediately play video2
+    if (!newMicState && phaseRef.current === 'connected-video1') {
+      proceedToNextVideo();
+    }
   };
 
   const toggleCamera = () => {
@@ -320,7 +320,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
 
   const handleScheduleCall = () => {
     setPhase('scheduling');
-    setScheduleCountdown(60);
+    setScheduleCountdown(15);
   };
 
   const formatTime = (seconds: number) => {
@@ -421,7 +421,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
                     {formatTime(scheduleCountdown)}
                   </div>
                 </div>
-                <p className="text-white/50 text-lg mt-6 mb-8">Please wait while we connect you to a doctor...</p>
+                <p className="text-white/50 text-lg mt-6 mb-8">Scheduling — wait time approx 15 sec</p>
                 <Button 
                   onClick={closeVideoCall}
                   variant="outline"
@@ -453,9 +453,8 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
 
                   <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full">
                     <p className="text-white/80 text-xs">
-                      {phase === 'connected-video1' && 'Part 1/3'}
-                      {phase === 'connected-video2' && 'Part 2/3'}
-                      {phase === 'connected-video3' && 'Part 3/3'}
+                      {phase === 'connected-video1' && 'Part 1/2'}
+                      {phase === 'connected-video2' && 'Part 2/2'}
                     </p>
                   </div>
                 </div>
