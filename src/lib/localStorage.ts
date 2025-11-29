@@ -179,10 +179,10 @@ const initializeSampleData = () => {
       {
         id: '2',
         role: 'doctor',
-        name: 'Dr. Snehh Kumar',
+        name: 'Dr. Sneha Kumari',
         phone: '9876543211',
         village: 'Rampur',
-        email: 'drsnehh@test',
+        email: 'drsneha@test',
         status: 'active'
       }
     ];
@@ -230,7 +230,7 @@ const initializeSampleData = () => {
         visitDate: '2025-11-15',
         diagnosis: 'Seasonal Flu',
         prescription: 'Paracetamol 500mg, Rest',
-        doctorName: 'Dr. Snehh Kumar'
+        doctorName: 'Dr. Sneha Kumari'
       },
       {
         id: '2',
@@ -239,7 +239,7 @@ const initializeSampleData = () => {
         visitDate: '2025-10-20',
         diagnosis: 'Stomach Upset',
         prescription: 'Antacid Tablets, Light Diet',
-        doctorName: 'Dr. Snehh Kumar'
+        doctorName: 'Dr. Sneha Kumari'
       }
     ];
     localStorage.setItem('patientHistory', JSON.stringify(sampleHistory));

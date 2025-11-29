@@ -169,7 +169,7 @@ const DoctorDashboard = () => {
     addPrescription({
       patientId: selectedAppointmentForAction.userId,
       patientName: selectedAppointmentForAction.patientName,
-      doctorName: 'Dr. Snehh Kumar',
+      doctorName: 'Dr. Sneha Kumari',
       date: new Date().toISOString().split('T')[0],
       medicines: appointmentPrescriptionData.medicines,
       diagnosis: appointmentPrescriptionData.diagnosis,
@@ -181,7 +181,7 @@ const DoctorDashboard = () => {
     addNotification({
       userId: selectedAppointmentForAction.userId,
       type: 'prescription',
-      message: `Dr. Snehh Kumar has generated your prescription. Check My Prescriptions to view and download.`,
+      message: `Dr. Sneha Kumari has generated your prescription. Check My Prescriptions to view and download.`,
       appointmentId: selectedAppointmentForAction.id
     });
 
@@ -210,14 +210,14 @@ const DoctorDashboard = () => {
         appointmentId: referAppointment.id,
         patientName: referAppointment.patientName,
         patientId: referAppointment.userId,
-        doctorName: 'Dr. Snehh Kumar',
+        doctorName: 'Dr. Sneha Kumari',
         reason: referReason
       });
 
       addNotification({
         userId: referAppointment.userId,
         type: 'referral',
-        message: `Dr. Snehh Kumar has referred you back to the hospital for further treatment. Reason: ${referReason}`,
+        message: `Dr. Sneha Kumari has referred you back to the hospital for further treatment. Reason: ${referReason}`,
         appointmentId: referAppointment.id
       });
 
@@ -266,7 +266,7 @@ const DoctorDashboard = () => {
     const prescriptionRecord = {
       patientId: prescriptionPatient?.id || '1',
       patientName: prescriptionPatient?.name || '',
-      doctorName: 'Dr. Snehh Kumar',
+      doctorName: 'Dr. Sneha Kumari',
       date: new Date().toISOString().split('T')[0],
       medicines: prescriptionData.medicines,
       diagnosis: prescriptionData.diagnosis,
@@ -281,7 +281,7 @@ const DoctorDashboard = () => {
       visitDate: new Date().toISOString().split('T')[0],
       diagnosis: prescriptionData.diagnosis,
       prescription: prescriptionData.medicines,
-      doctorName: 'Dr. Snehh Kumar'
+      doctorName: 'Dr. Sneha Kumari'
     });
 
     toast.success("Prescription saved and synced to patient dashboard");
@@ -320,7 +320,7 @@ const DoctorDashboard = () => {
             <div className="relative animate-doctor-float">
               <div className="relative">
                 <Avatar className="w-20 h-20 md:w-28 md:h-28 lg:w-44 lg:h-44 border-4 border-white shadow-xl ring-4 ring-white/50">
-                  <AvatarImage src={doctorNew} alt="Dr. Snehh Kumar — profile photo" className="object-cover" />
+                  <AvatarImage src={doctorNew} alt="Dr. Sneha Kumari — profile photo" className="object-cover" />
                   <AvatarFallback className="text-2xl">SK</AvatarFallback>
                 </Avatar>
                 {/* Subtle sparkle accent behind photo */}
@@ -331,7 +331,7 @@ const DoctorDashboard = () => {
             {/* Doctor Info */}
             <div className="flex-1 text-center md:text-left">
               <h2 className="doctor-name-shimmer text-2xl md:text-[28px] lg:text-[34px] mb-2">
-                Dr. Snehh Kumar
+                Dr. Sneha Kumari
               </h2>
               <p className="text-sm md:text-base text-muted-foreground font-medium mb-3">
                 Specialist — Dhanpur Hospital

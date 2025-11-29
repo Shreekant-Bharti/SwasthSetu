@@ -88,7 +88,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
             <DialogHeader className="p-4 pb-3 border-b border-border/30">
               <DialogTitle className="text-lg">Video Consultation</DialogTitle>
               <DialogDescription className="text-sm">
-                {videoLoading ? 'Searching for available doctor...' : 'Connected with Dr. Snehh Kumar'}
+                {videoLoading ? 'Searching for available doctor...' : 'Connected with Dr. Sneha Kumari'}
               </DialogDescription>
             </DialogHeader>
             

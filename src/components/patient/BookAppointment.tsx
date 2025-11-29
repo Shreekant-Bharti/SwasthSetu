@@ -100,7 +100,7 @@ const BookAppointment = ({ userId, userName }: BookAppointmentProps) => {
       addAppointment({
         userId,
         patientName: userName,
-        doctor: 'Dr. Snehh Kumar',
+        doctor: 'Dr. Sneha Kumari',
         hospital: formData.hospital,
         department: formData.department,
         date: formData.date,
@@ -147,7 +147,7 @@ Hospital: ${formData.hospital}
 Department: ${formData.department}
 Appointment Date: ${formData.date}
 Time: ${formData.time}
-Doctor: Dr. Snehh Kumar
+Doctor: Dr. Sneha Kumari
 
 Payment: ₹10.00 (PAID)
 Payment Method: Online
@@ -412,7 +412,7 @@ Thank you for booking with SwasthSetu!
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Doctor:</span>
-                <span className="font-medium">Dr. Snehh Kumar</span>
+                <span className="font-medium">Dr. Sneha Kumari</span>
               </div>
               <div className="border-t my-2"></div>
               <div className="flex justify-between text-lg font-bold">
