@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Video, MessageSquare, Loader2, Mic, MicOff, Phone, PhoneOff, Volume2 } from "lucide-react";
+import { Video, MessageSquare, Loader2, Mic, MicOff, PhoneOff, Camera, CameraOff, X } from "lucide-react";
 import ChatWindow from "./ChatWindow";
 import { toast } from "sonner";
 import { playChimeSound } from "@/lib/sounds";
@@ -11,28 +11,31 @@ interface OnlineConsultationProps {
   userName: string;
 }
 
-type VideoPhase = 'searching' | 'video1' | 'video2' | 'video3' | 'done';
+type VideoPhase = 'searching' | 'no-doctor' | 'scheduling' | 'connected-video1' | 'connected-video2' | 'connected-video3' | 'done';
 
 const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
   const [chatOpen, setChatOpen] = useState(false);
   const [videoCallOpen, setVideoCallOpen] = useState(false);
   const [phase, setPhase] = useState<VideoPhase>('searching');
   const [countdown, setCountdown] = useState(7);
-  const [micEnabled, setMicEnabled] = useState(false);
-  const [micPermissionDenied, setMicPermissionDenied] = useState(false);
+  const [scheduleCountdown, setScheduleCountdown] = useState(60);
+  const [micEnabled, setMicEnabled] = useState(true);
+  const [cameraEnabled, setCameraEnabled] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
-  const [audioOnly, setAudioOnly] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [videoPaused, setVideoPaused] = useState(false);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const doctorVideoRef = useRef<HTMLVideoElement>(null);
+  const patientVideoRef = useRef<HTMLVideoElement>(null);
+  const fallbackVideoRef = useRef<HTMLVideoElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
   const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasSpokenRef = useRef(false);
-  const isSpeakingRef = useRef(false);
   const phaseRef = useRef<VideoPhase>('searching');
 
-  // Keep phaseRef in sync
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
@@ -42,11 +45,11 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       id: `presc-video-${Date.now()}`,
       patientId: userId,
       patientName: userName,
-      doctorName: "Dr. Snehh Kumar",
+      doctorName: "Dr. Sneha Kumari",
       date: new Date().toISOString().split('T')[0],
       diagnosis: "Video Consultation - General Checkup",
       medicines: "Paracetamol 500mg - 1 tablet twice daily after meals\nVitamin C 500mg - 1 tablet daily\nAzithromycin 250mg - 1 tablet daily for 3 days",
-      notes: "Stay hydrated, take adequate rest. Follow up after 5 days if symptoms persist. Avoid cold drinks and fried food.",
+      notes: "Stay hydrated, take adequate rest. Follow up after 5 days if symptoms persist.",
       tests: ["Blood Sugar Test", "Complete Blood Count (CBC)"],
       createdAt: new Date().toISOString()
     };
@@ -55,9 +58,8 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     existingPrescriptions.push(prescription);
     localStorage.setItem('prescriptions', JSON.stringify(existingPrescriptions));
 
-    // Play chime and show toast
     playChimeSound();
-    toast.success("Prescription received — available in My Prescriptions.", {
+    toast.success("Prescription generated — available in My Prescriptions.", {
       duration: 5000,
       icon: "💊"
     });
@@ -69,15 +71,21 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       setVideoCallOpen(false);
       setPhase('searching');
       setCountdown(7);
+      setScheduleCountdown(60);
       setIsClosing(false);
-      setMicEnabled(false);
+      setMicEnabled(true);
+      setCameraEnabled(true);
+      setIsSpeaking(false);
+      setVideoPaused(false);
       hasSpokenRef.current = false;
-      isSpeakingRef.current = false;
-      
-      // Cleanup mic
+
       if (micStreamRef.current) {
         micStreamRef.current.getTracks().forEach(track => track.stop());
         micStreamRef.current = null;
+      }
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach(track => track.stop());
+        cameraStreamRef.current = null;
       }
       if (audioContextRef.current) {
         audioContextRef.current.close();
@@ -90,31 +98,49 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     }, 300);
   }, []);
 
-  const handleVideoEnded = useCallback(() => {
+  const proceedToNextVideo = useCallback(() => {
     const currentPhase = phaseRef.current;
-    console.log('Video ended, current phase:', currentPhase);
     
-    if (currentPhase === 'video3') {
-      // Final video ended - generate prescription and close
+    if (currentPhase === 'connected-video1') {
+      setPhase('connected-video2');
+      hasSpokenRef.current = false;
+      setVideoPaused(false);
+    } else if (currentPhase === 'connected-video2') {
+      setPhase('connected-video3');
+      hasSpokenRef.current = false;
+      setVideoPaused(false);
+    } else if (currentPhase === 'connected-video3') {
       generatePrescription();
       closeVideoCall();
     }
   }, [generatePrescription, closeVideoCall]);
 
-  const proceedToNextVideo = useCallback(() => {
+  const handleVideoEnded = useCallback(() => {
     const currentPhase = phaseRef.current;
-    console.log('Proceeding from phase:', currentPhase);
     
-    if (currentPhase === 'video1') {
-      setPhase('video2');
-      hasSpokenRef.current = false;
-    } else if (currentPhase === 'video2') {
-      setPhase('video3');
-      hasSpokenRef.current = false;
+    if (currentPhase === 'no-doctor') {
+      return;
+    }
+    
+    if (currentPhase === 'connected-video3') {
+      generatePrescription();
+      closeVideoCall();
+    }
+  }, [generatePrescription, closeVideoCall]);
+
+  const setupCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      cameraStreamRef.current = stream;
+      if (patientVideoRef.current) {
+        patientVideoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.log('Camera permission denied');
+      setCameraEnabled(false);
     }
   }, []);
 
-  // Mic detection setup
   const setupMicDetection = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -126,41 +152,19 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       analyserRef.current.fftSize = 256;
       source.connect(analyserRef.current);
       
-      setMicEnabled(true);
       startMicMonitoring();
     } catch (error) {
-      console.log('Mic permission denied, using auto-progression');
-      setMicPermissionDenied(true);
+      console.log('Mic permission denied');
       setMicEnabled(false);
-      // Start auto-silence simulation
-      startAutoSilenceSimulation();
     }
   }, []);
-
-  const startAutoSilenceSimulation = useCallback(() => {
-    // Simulate silence events for mic-denied scenario
-    silenceTimeoutRef.current = setTimeout(() => {
-      const currentPhase = phaseRef.current;
-      if (currentPhase === 'video1' || currentPhase === 'video2') {
-        proceedToNextVideo();
-        // Schedule next auto-progression
-        if (currentPhase === 'video1') {
-          silenceTimeoutRef.current = setTimeout(() => {
-            if (phaseRef.current === 'video2') {
-              proceedToNextVideo();
-            }
-          }, 8000);
-        }
-      }
-    }, 5000);
-  }, [proceedToNextVideo]);
 
   const startMicMonitoring = useCallback(() => {
     if (!analyserRef.current) return;
 
     const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-    const SILENCE_THRESHOLD = 30;
-    const SILENCE_DURATION = 1500; // 1.5 seconds
+    const SILENCE_THRESHOLD = 35;
+    const SILENCE_DURATION = 2000;
 
     const checkAudio = () => {
       if (!analyserRef.current || !videoCallOpen) return;
@@ -169,36 +173,43 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
 
       const currentPhase = phaseRef.current;
-      
+      const isConnected = currentPhase.startsWith('connected-');
+
+      if (!isConnected) {
+        requestAnimationFrame(checkAudio);
+        return;
+      }
+
       if (average > SILENCE_THRESHOLD) {
-        // User is speaking
-        isSpeakingRef.current = true;
+        setIsSpeaking(true);
         hasSpokenRef.current = true;
         
+        if (doctorVideoRef.current && !doctorVideoRef.current.paused) {
+          doctorVideoRef.current.pause();
+          setVideoPaused(true);
+        }
+
         if (silenceTimeoutRef.current) {
           clearTimeout(silenceTimeoutRef.current);
           silenceTimeoutRef.current = null;
         }
-      } else if (hasSpokenRef.current && isSpeakingRef.current) {
-        // User stopped speaking, start silence timer
-        isSpeakingRef.current = false;
+      } else if (hasSpokenRef.current) {
+        setIsSpeaking(false);
         
-        if (!silenceTimeoutRef.current && (currentPhase === 'video1' || currentPhase === 'video2')) {
+        if (!silenceTimeoutRef.current) {
           silenceTimeoutRef.current = setTimeout(() => {
-            console.log('Silence detected after speech, proceeding...');
-            proceedToNextVideo();
+            if (doctorVideoRef.current && doctorVideoRef.current.paused) {
+              const timeRemaining = doctorVideoRef.current.duration - doctorVideoRef.current.currentTime;
+              if (timeRemaining > 0.5) {
+                doctorVideoRef.current.play();
+                setVideoPaused(false);
+              } else {
+                proceedToNextVideo();
+              }
+            }
             silenceTimeoutRef.current = null;
             hasSpokenRef.current = false;
           }, SILENCE_DURATION);
-        }
-      } else if (!hasSpokenRef.current && (currentPhase === 'video1' || currentPhase === 'video2')) {
-        // User never spoke - auto-proceed after initial wait
-        if (!silenceTimeoutRef.current) {
-          silenceTimeoutRef.current = setTimeout(() => {
-            console.log('No speech detected, auto-proceeding...');
-            proceedToNextVideo();
-            silenceTimeoutRef.current = null;
-          }, 5000);
         }
       }
 
@@ -208,16 +219,26 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     requestAnimationFrame(checkAudio);
   }, [videoCallOpen, proceedToNextVideo]);
 
-  // Start video call
   const handleVideoCall = () => {
     setVideoCallOpen(true);
     setPhase('searching');
     setCountdown(7);
-    setMicPermissionDenied(false);
-    setAudioOnly(false);
+
+    // Preload videos
+    const preload1 = document.createElement('video');
+    preload1.src = '/doctor-video-1.mp4';
+    preload1.preload = 'auto';
+
+    const preload2 = document.createElement('video');
+    preload2.src = '/doctor-video-2.mp4';
+    preload2.preload = 'auto';
+
+    const preload3 = document.createElement('video');
+    preload3.src = '/doctor-video-3.mp4';
+    preload3.preload = 'auto';
   };
 
-  // Countdown for searching phase
+  // Searching countdown
   useEffect(() => {
     if (!videoCallOpen || phase !== 'searching') return;
 
@@ -225,7 +246,33 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          setPhase('video1');
+          setPhase('no-doctor');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [videoCallOpen, phase]);
+
+  // Play fallback video
+  useEffect(() => {
+    if (phase === 'no-doctor' && fallbackVideoRef.current) {
+      fallbackVideoRef.current.play().catch(console.error);
+    }
+  }, [phase]);
+
+  // Schedule countdown
+  useEffect(() => {
+    if (phase !== 'scheduling') return;
+
+    const timer = setInterval(() => {
+      setScheduleCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setPhase('connected-video1');
+          setupCamera();
           setupMicDetection();
           return 0;
         }
@@ -234,27 +281,52 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [videoCallOpen, phase, setupMicDetection]);
+  }, [phase, setupCamera, setupMicDetection]);
 
-  // Play video when phase changes
+  // Play doctor videos
   useEffect(() => {
-    if (videoRef.current && (phase === 'video1' || phase === 'video2' || phase === 'video3')) {
-      videoRef.current.load();
-      videoRef.current.play().catch(console.error);
+    if (doctorVideoRef.current && phase.startsWith('connected-video')) {
+      doctorVideoRef.current.load();
+      doctorVideoRef.current.play().catch(console.error);
     }
   }, [phase]);
 
   const getVideoSrc = () => {
     switch (phase) {
-      case 'video1': return '/doctor-video-1.mp4';
-      case 'video2': return '/doctor-video-2.mp4';
-      case 'video3': return '/doctor-video-3.mp4';
+      case 'connected-video1': return '/doctor-video-1.mp4';
+      case 'connected-video2': return '/doctor-video-2.mp4';
+      case 'connected-video3': return '/doctor-video-3.mp4';
       default: return '';
     }
   };
 
-  const handleEndCall = () => {
-    closeVideoCall();
+  const toggleMic = () => {
+    if (micStreamRef.current) {
+      micStreamRef.current.getAudioTracks().forEach(track => {
+        track.enabled = !micEnabled;
+      });
+    }
+    setMicEnabled(!micEnabled);
+  };
+
+  const toggleCamera = () => {
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getVideoTracks().forEach(track => {
+        track.enabled = !cameraEnabled;
+      });
+    }
+    setCameraEnabled(!cameraEnabled);
+  };
+
+  const handleScheduleCall = () => {
+    setPhase('scheduling');
+    setScheduleCountdown(60);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -279,135 +351,165 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
         </CardContent>
       </Card>
 
-      {/* Video Call Card */}
       {videoCallOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <div 
             className={`
               relative bg-card rounded-2xl shadow-2xl border border-border/50 overflow-hidden
-              w-[92vw] md:w-[60vw] max-w-[800px]
+              w-[95vw] h-[85vh] max-w-[1200px]
               transition-all duration-300 ease-out
               ${isClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100 animate-scale-in'}
             `}
-            style={{ maxHeight: '50vh' }}
           >
-            {/* Header */}
-            <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/70 to-transparent p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Video className="h-5 w-5 text-primary" />
+            <Button
+              onClick={closeVideoCall}
+              size="icon"
+              variant="ghost"
+              className="absolute top-4 right-4 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+
+            {/* Searching Phase */}
+            {phase === 'searching' && (
+              <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+                <div className="relative mb-8">
+                  <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
                   </div>
-                  <div>
-                    <p className="text-white font-semibold text-sm">
-                      {phase === 'searching' ? 'Searching...' : 'Dr. Snehh Kumar'}
-                    </p>
-                    <p className="text-white/70 text-xs">
-                      {phase === 'searching' ? 'Finding available doctor' : 'Video Consultation'}
-                    </p>
-                  </div>
+                  <div className="absolute inset-0 w-24 h-24 rounded-full animate-ping bg-primary/10" />
                 </div>
+                <p className="text-white text-2xl font-medium mb-3">Searching for doctor</p>
+                <div className="flex items-center gap-2 text-white/70 text-lg">
+                  <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                  <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                  <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                </div>
+                <p className="text-primary text-4xl font-bold mt-6">{countdown}s</p>
+              </div>
+            )}
+
+            {/* No Doctor Found Phase */}
+            {phase === 'no-doctor' && (
+              <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+                <div className="w-full max-w-lg aspect-video mb-8 rounded-xl overflow-hidden">
+                  <video
+                    ref={fallbackVideoRef}
+                    src="/doctor-video.mp4"
+                    className="w-full h-full object-cover"
+                    playsInline
+                  />
+                </div>
+                <p className="text-white/80 text-xl mb-6">No doctors available right now</p>
                 <Button 
-                  onClick={handleEndCall} 
-                  size="sm" 
-                  variant="destructive"
-                  className="rounded-full"
+                  onClick={handleScheduleCall}
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg"
                 >
-                  <PhoneOff className="h-4 w-4" />
+                  <Video className="mr-2 h-5 w-5" />
+                  Schedule a Call
                 </Button>
               </div>
-            </div>
+            )}
 
-            {/* Content */}
-            <div className="w-full h-full min-h-[280px] md:min-h-[350px] bg-gradient-to-br from-slate-900 to-slate-800">
-              {phase === 'searching' ? (
-                <div className="flex flex-col items-center justify-center h-full py-16 animate-fade-in">
-                  <div className="relative mb-6">
-                    <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    </div>
-                    <div className="absolute inset-0 w-20 h-20 rounded-full animate-ping bg-primary/10" />
+            {/* Scheduling Countdown Phase */}
+            {phase === 'scheduling' && (
+              <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+                <p className="text-white/70 text-xl mb-4">Connecting you in</p>
+                <div className="relative">
+                  <div className="text-8xl font-bold text-primary animate-pulse">
+                    {formatTime(scheduleCountdown)}
                   </div>
-                  <p className="text-white text-lg font-medium mb-2">Searching for doctor</p>
-                  <div className="flex items-center gap-1 text-white/70">
-                    <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
-                  </div>
-                  <p className="text-primary text-2xl font-bold mt-4">{countdown}s</p>
                 </div>
-              ) : (
-                <div className="relative w-full h-full">
-                  {!audioOnly ? (
-                    <video
-                      ref={videoRef}
-                      src={getVideoSrc()}
-                      className="w-full h-full object-cover transition-opacity duration-300"
-                      style={{ maxHeight: '50vh' }}
-                      autoPlay
-                      playsInline
-                      onEnded={handleVideoEnded}
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full py-16">
-                      <Volume2 className="h-16 w-16 text-primary mb-4 animate-pulse" />
-                      <p className="text-white text-lg">Audio Only Mode</p>
-                      <p className="text-white/60 text-sm">Listening to Dr. Snehh Kumar...</p>
-                      <audio
-                        ref={videoRef as any}
-                        src={getVideoSrc()}
-                        autoPlay
-                        onEnded={handleVideoEnded}
-                      />
-                    </div>
-                  )}
+                <p className="text-white/50 text-lg mt-6 mb-8">Please wait while we connect you to a doctor...</p>
+                <Button 
+                  onClick={closeVideoCall}
+                  variant="outline"
+                  className="border-red-500/50 text-red-400 hover:bg-red-500/20"
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
 
-                  {/* Mic indicator */}
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3">
-                    <div className={`
-                      flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md
-                      ${micEnabled ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}
-                    `}>
-                      {micEnabled ? (
-                        <>
-                          <Mic className="h-4 w-4 text-green-400" />
-                          <span className="text-green-400 text-sm">Mic Active</span>
-                        </>
-                      ) : (
-                        <>
-                          <MicOff className="h-4 w-4 text-red-400" />
-                          <span className="text-red-400 text-sm">
-                            {micPermissionDenied ? 'Mic Denied' : 'Mic Off'}
-                          </span>
-                        </>
-                      )}
-                    </div>
+            {/* Connected Video Call Phase */}
+            {phase.startsWith('connected-') && (
+              <div className="relative w-full h-full bg-slate-900">
+                <div className="absolute inset-0">
+                  <video
+                    ref={doctorVideoRef}
+                    src={getVideoSrc()}
+                    className={`w-full h-full object-contain bg-black transition-opacity duration-300 ${videoPaused ? 'opacity-50' : 'opacity-100'}`}
+                    playsInline
+                    onEnded={handleVideoEnded}
+                  />
+                  
+                  <div className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm px-4 py-2 rounded-full">
+                    <p className="text-white text-sm flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${videoPaused ? 'bg-yellow-500' : 'bg-green-500 animate-pulse'}`} />
+                      {videoPaused ? 'Dr. Sneha Kumari is listening...' : 'Dr. Sneha Kumari is speaking...'}
+                    </p>
                   </div>
 
-                  {/* Video phase indicator */}
-                  <div className="absolute top-16 right-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full">
+                  <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full">
                     <p className="text-white/80 text-xs">
-                      {phase === 'video1' && 'Part 1/3'}
-                      {phase === 'video2' && 'Part 2/3'}
-                      {phase === 'video3' && 'Part 3/3'}
+                      {phase === 'connected-video1' && 'Part 1/3'}
+                      {phase === 'connected-video2' && 'Part 2/3'}
+                      {phase === 'connected-video3' && 'Part 3/3'}
                     </p>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Audio-only fallback button */}
-            {phase !== 'searching' && !audioOnly && (
-              <div className="absolute bottom-4 right-4">
-                <Button 
-                  onClick={() => setAudioOnly(true)} 
-                  size="sm" 
-                  variant="outline"
-                  className="bg-black/30 border-white/20 text-white hover:bg-black/50 text-xs"
-                >
-                  <Volume2 className="h-3 w-3 mr-1" />
-                  Audio only
-                </Button>
+                {/* Patient Video Preview */}
+                <div className="absolute bottom-24 right-6 w-48 h-36 rounded-xl overflow-hidden border-2 border-primary/50 shadow-lg bg-slate-800">
+                  {cameraEnabled ? (
+                    <video
+                      ref={patientVideoRef}
+                      autoPlay
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                      style={{ transform: 'scaleX(-1)' }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <CameraOff className="h-8 w-8 text-white/50" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-xs text-white">
+                    You {isSpeaking && <span className="text-green-400">(speaking)</span>}
+                  </div>
+                </div>
+
+                {/* Controls */}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
+                  <Button
+                    onClick={toggleMic}
+                    size="icon"
+                    variant={micEnabled ? "secondary" : "destructive"}
+                    className="rounded-full w-14 h-14"
+                  >
+                    {micEnabled ? <Mic className="h-6 w-6" /> : <MicOff className="h-6 w-6" />}
+                  </Button>
+                  
+                  <Button
+                    onClick={closeVideoCall}
+                    size="icon"
+                    variant="destructive"
+                    className="rounded-full w-16 h-16"
+                  >
+                    <PhoneOff className="h-7 w-7" />
+                  </Button>
+
+                  <Button
+                    onClick={toggleCamera}
+                    size="icon"
+                    variant={cameraEnabled ? "secondary" : "destructive"}
+                    className="rounded-full w-14 h-14"
+                  >
+                    {cameraEnabled ? <Camera className="h-6 w-6" /> : <CameraOff className="h-6 w-6" />}
+                  </Button>
+                </div>
               </div>
             )}
           </div>
