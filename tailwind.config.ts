@@ -73,6 +73,14 @@ export default {
         teal: "hsl(var(--teal))",
         indigo: "hsl(var(--indigo))",
         "soft-green": "hsl(var(--soft-green))",
+        "pastel-coral": "hsl(var(--pastel-coral))",
+        "pastel-coral-light": "hsl(var(--pastel-coral-light))",
+        "pastel-mint": "hsl(var(--pastel-mint))",
+        "pastel-pink-bg": "hsl(var(--pastel-pink-bg))",
+        "pastel-card-tint": "hsl(var(--pastel-card-tint))",
+      },
+      fontFamily: {
+        pacifico: ['Pacifico', 'Great Vibes', 'Poppins', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -9,8 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { LogOut, Calendar, MessageSquare, Send, FileText, User, Stethoscope, Heart, Camera, Check, ArrowLeft } from "lucide-react";
-import drSnehh from "@/assets/dr-snehh.jpg";
+import { LogOut, Calendar, MessageSquare, Send, FileText, User, Stethoscope, Heart, Camera, Check, ArrowLeft, Circle } from "lucide-react";
+import doctorNew from "@/assets/doctor-new.jpg";
 import { toast } from "sonner";
 
 interface PatientRecord {
@@ -313,44 +313,44 @@ const DoctorDashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Doctor Profile Section */}
-        <Card className="mb-8 shadow-2xl border-blue-200 bg-white animate-fade-in overflow-hidden">
-          <div className="bg-gradient-to-r from-[#2563EB] to-[#3B82F6] h-32"></div>
-          <CardContent className="p-8 -mt-16">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-              <Avatar className="w-40 h-40 border-4 border-white shadow-2xl ring-4 ring-blue-200">
-                <AvatarImage src={drSnehh} alt="Dr. Snehh Kumar" />
-                <AvatarFallback>DS</AvatarFallback>
+        {/* Doctor Profile Section - Glassmorphism Card */}
+        <div className="glass-profile-card card-entrance mb-8 transition-transform duration-150 ease-out hover:-translate-y-1.5 hover:scale-[1.01]">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+            {/* Doctor Avatar with Shimmer */}
+            <div className="relative avatar-shimmer">
+              <Avatar className="w-16 h-16 md:w-[88px] md:h-[88px] lg:w-[120px] lg:h-[120px] border-2 border-white shadow-lg ring-2 ring-white">
+                <AvatarImage src={doctorNew} alt="Dr. Sneha Kumari" className="object-cover" />
+                <AvatarFallback>SK</AvatarFallback>
               </Avatar>
-              <div className="flex-1 text-center md:text-left mt-16 md:mt-0">
-                <h2 className="text-4xl font-bold text-gray-800 mb-2">Dr. Snehh Kumar</h2>
-                <div className="flex flex-wrap gap-3 justify-center md:justify-start mb-6">
-                  <Badge className="text-base px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8]">
-                    <Stethoscope className="w-4 h-4 mr-2" />
-                    General Physician
-                  </Badge>
-                  <Badge variant="secondary" className="text-base px-4 py-2 bg-[#D1FAE5] text-green-800 border-green-200">
-                    SwasthSetu Community Hospital
-                  </Badge>
-                </div>
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 shadow-md">
-                    <p className="text-sm text-gray-600 mb-1">Contact</p>
-                    <p className="font-bold text-gray-800 text-lg">+91 98765-43211</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 shadow-md">
-                    <p className="text-sm text-gray-600 mb-1">Available Hours</p>
-                    <p className="font-bold text-gray-800 text-lg">9:00 AM - 6:00 PM</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 shadow-md">
-                    <p className="text-sm text-gray-600 mb-1">Specialization</p>
-                    <p className="font-bold text-gray-800 text-lg">General Medicine</p>
-                  </div>
-                </div>
-              </div>
             </div>
-          </CardContent>
-        </Card>
+            
+            {/* Doctor Info */}
+            <div className="flex-1 text-center md:text-left">
+              <h2 className="text-base md:text-lg font-bold text-foreground mb-1">Dr. Sneha Kumari</h2>
+              <p className="text-sm text-muted-foreground mb-2">Cardiologist — Dhanpur Hospital</p>
+              <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
+                <Circle className="w-2 h-2 mr-1.5 fill-green-500 text-green-500" />
+                Online
+              </Badge>
+            </div>
+          </div>
+          
+          {/* Stats Row */}
+          <div className="grid grid-cols-3 gap-3 mt-4">
+            <div className="bg-gradient-to-br from-pastel-coral-light/30 to-pastel-coral/20 rounded-xl p-3 shadow-sm">
+              <p className="text-xs text-muted-foreground mb-0.5">Contact</p>
+              <p className="font-semibold text-foreground text-sm">+91 98765-43211</p>
+            </div>
+            <div className="bg-gradient-to-br from-pastel-mint/30 to-pastel-mint/20 rounded-xl p-3 shadow-sm">
+              <p className="text-xs text-muted-foreground mb-0.5">Available</p>
+              <p className="font-semibold text-foreground text-sm">9 AM - 6 PM</p>
+            </div>
+            <div className="bg-gradient-to-br from-purple-100/50 to-purple-50/30 rounded-xl p-3 shadow-sm">
+              <p className="text-xs text-muted-foreground mb-0.5">Specialty</p>
+              <p className="font-semibold text-foreground text-sm">Cardiology</p>
+            </div>
+          </div>
+        </div>
 
         {/* Incoming Appointments from Hospital */}
         <Card className="mb-8 shadow-xl border-blue-100">
@@ -370,7 +370,11 @@ const DoctorDashboard = () => {
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <p className="font-bold text-xl text-gray-800">{apt.patientName}</p>
+                          <span className="patient-name-pill inline-block">
+                            <span className="patient-name-gradient name-sparkle text-lg md:text-2xl lg:text-[32px]">
+                              {apt.patientName === 'Patient Name' ? 'Anupma' : apt.patientName}
+                            </span>
+                          </span>
                           <p className="text-sm text-muted-foreground">{apt.hospital}</p>
                           <p className="text-sm text-muted-foreground">Department: {apt.department || 'General'}</p>
                           <p className="text-sm text-muted-foreground">{apt.date} at {apt.time}</p>
@@ -433,19 +437,23 @@ const DoctorDashboard = () => {
           <CardContent className="p-6">
             <div className="grid md:grid-cols-3 gap-6">
               {patientRecords.map((patient) => (
-                <Card key={patient.id} className="border-2 border-blue-100 hover:border-[#2563EB] transition-all hover:shadow-xl hover:-translate-y-1">
+                <Card key={patient.id} className="border-2 border-pastel-mint/30 hover:border-pastel-coral/50 transition-all hover:shadow-xl hover:-translate-y-1 bg-pastel-card-tint">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h3 className="font-bold text-xl text-gray-800">{patient.name}</h3>
-                        <p className="text-sm text-gray-600">Age: {patient.age} years</p>
+                        <span className="patient-name-pill inline-block mb-1">
+                          <span className="patient-name-gradient name-sparkle text-lg md:text-xl lg:text-2xl">
+                            {patient.name === 'Ramesh Kumar' ? 'Anupma' : patient.name}
+                          </span>
+                        </span>
+                        <p className="text-sm text-muted-foreground">Age: {patient.age} years</p>
                       </div>
-                      <Badge variant="outline" className="bg-blue-50 text-[#2563EB] border-blue-200">
+                      <Badge variant="outline" className="bg-pastel-mint/20 text-teal border-pastel-mint">
                         {patient.diagnosis}
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Last Visit: <span className="font-semibold text-gray-800">{patient.lastVisit}</span>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Last Visit: <span className="font-semibold text-foreground">{patient.lastVisit}</span>
                     </p>
                     <div className="flex flex-col gap-2">
                       <Button 
