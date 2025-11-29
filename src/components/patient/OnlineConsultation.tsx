@@ -77,28 +77,29 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       </Card>
 
       <Dialog open={videoModalOpen} onOpenChange={handleModalClose}>
-        <DialogContent className="sm:max-w-3xl p-0 overflow-hidden border-0 bg-transparent shadow-none">
+        <DialogContent className="sm:max-w-xl p-0 overflow-hidden border-0 bg-transparent shadow-none">
           <div 
             className="bg-card rounded-2xl shadow-2xl border border-border/50 overflow-hidden animate-scale-in"
             style={{
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 12px 24px -8px rgba(0, 0, 0, 0.15)'
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 12px 24px -8px rgba(0, 0, 0, 0.15)',
+              maxHeight: '70vh',
             }}
           >
-            <DialogHeader className="p-6 pb-4 border-b border-border/30">
-              <DialogTitle className="text-xl">Video Consultation</DialogTitle>
-              <DialogDescription>
+            <DialogHeader className="p-4 pb-3 border-b border-border/30">
+              <DialogTitle className="text-lg">Video Consultation</DialogTitle>
+              <DialogDescription className="text-sm">
                 {videoLoading ? 'Searching for available doctor...' : 'Connected with Dr. Snehh Kumar'}
               </DialogDescription>
             </DialogHeader>
             
-            <div className="p-6">
+            <div className="p-4">
               {videoLoading ? (
-                <div className="flex flex-col items-center gap-4 py-12 animate-fade-in">
+                <div className="flex flex-col items-center gap-3 py-8 animate-fade-in">
                   <div className="relative">
-                    <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                    <div className="absolute inset-0 h-16 w-16 animate-ping rounded-full bg-primary/20" />
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                    <div className="absolute inset-0 h-12 w-12 animate-ping rounded-full bg-primary/20" />
                   </div>
-                  <p className="text-lg font-medium text-foreground">Searching for Doctor...</p>
+                  <p className="text-base font-medium text-foreground">Searching for Doctor...</p>
                   <p className="text-sm text-muted-foreground">Please wait while we connect you</p>
                 </div>
               ) : showVideo ? (
@@ -107,6 +108,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
                     ref={videoRef}
                     src="/doctor-video.mp4"
                     className="w-full rounded-xl shadow-lg"
+                    style={{ maxHeight: '50vh', objectFit: 'contain' }}
                     autoPlay
                     playsInline
                     onEnded={handleVideoEnded}
