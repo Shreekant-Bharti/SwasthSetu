@@ -54,40 +54,43 @@ const Hero = () => {
         <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           {/* Premium Glassmorphism Title Card */}
           <div 
-            className="inline-block px-6 sm:px-10 md:px-12 py-6 sm:py-8 md:py-10 rounded-[24px] sm:rounded-[30px] mb-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/20 animate-scale-in backdrop-blur-[25px]"
+            className="inline-block px-8 sm:px-14 md:px-16 py-8 sm:py-10 md:py-12 rounded-[28px] sm:rounded-[36px] mb-8 animate-scale-in"
             style={{ 
-              background: 'rgba(255, 255, 255, 0.18)',
-              backdropFilter: 'blur(25px)',
-              WebkitBackdropFilter: 'blur(25px)'
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.15) 100%)',
+              backdropFilter: 'blur(30px)',
+              WebkitBackdropFilter: 'blur(30px)',
+              boxShadow: '0 25px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(0, 111, 122, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4)',
+              border: '1.5px solid rgba(255, 255, 255, 0.35)',
             }}
           >
             <div className="relative">
               <h1 
-                className="font-black tracking-wider mb-0 leading-[1.1] relative"
+                className="font-black tracking-wide mb-0 leading-[1.05] relative"
                 style={{ 
-                  fontFamily: "'Poppins', 'Inter', sans-serif",
-                  fontSize: 'clamp(28px, 8vw, 96px)',
+                  fontFamily: "'Poppins', sans-serif",
+                  fontSize: 'clamp(32px, 10vw, 96px)',
                   fontWeight: '900',
-                  letterSpacing: '1px',
-                  background: 'linear-gradient(135deg, #006F7A 0%, #FF7A6E 100%)',
+                  letterSpacing: '2px',
+                  background: 'linear-gradient(135deg, #00A8B5 0%, #008B9A 35%, #FF8A7A 70%, #FF6B5B 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
-                  filter: 'drop-shadow(0 4px 20px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 40px rgba(255, 255, 255, 0.3))',
-                  textShadow: '0 0 60px rgba(0, 111, 122, 0.5), 0 0 80px rgba(255, 122, 110, 0.4)',
+                  filter: 'drop-shadow(0 6px 25px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 50px rgba(255, 255, 255, 0.4))',
                 }}
               >
                 <span className="relative inline-block">
                   SwasthSetu
                   {/* Shimmer Effect */}
                   <span 
-                    className="absolute inset-0 opacity-40"
+                    className="absolute inset-0 pointer-events-none"
                     style={{
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%)',
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.7) 50%, transparent 100%)',
                       backgroundSize: '200% 100%',
-                      animation: 'shimmer 6s linear infinite',
+                      animation: 'shimmer 6s ease-in-out infinite',
                       WebkitBackgroundClip: 'text',
                       backgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      opacity: 0.5,
                     }}
                   />
                 </span>
