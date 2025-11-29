@@ -11,7 +11,7 @@ interface OnlineConsultationProps {
   userName: string;
 }
 
-type VideoPhase = 'searching' | 'no-doctor' | 'scheduling' | 'connected-video1' | 'connected-video2' | 'done';
+type VideoPhase = 'searching' | 'no-doctor' | 'scheduling' | 'connected-video1' | 'connected-video2' | 'connected-video3' | 'done';
 
 const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
   const [chatOpen, setChatOpen] = useState(false);
@@ -22,18 +22,13 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
   const [micEnabled, setMicEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [videoPaused, setVideoPaused] = useState(false);
 
   const doctorVideoRef = useRef<HTMLVideoElement>(null);
   const patientVideoRef = useRef<HTMLVideoElement>(null);
   const fallbackVideoRef = useRef<HTMLVideoElement>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
-  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hasSpokenRef = useRef(false);
   const phaseRef = useRef<VideoPhase>('searching');
 
   useEffect(() => {
@@ -59,7 +54,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     localStorage.setItem('prescriptions', JSON.stringify(existingPrescriptions));
 
     playChimeSound();
-    toast.success("Prescription generated — available in My Prescriptions.", {
+    toast.success("Prescription generated — check My Prescriptions.", {
       duration: 5000,
       icon: "💊"
     });
@@ -75,9 +70,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       setIsClosing(false);
       setMicEnabled(true);
       setCameraEnabled(true);
-      setIsSpeaking(false);
       setVideoPaused(false);
-      hasSpokenRef.current = false;
 
       if (micStreamRef.current) {
         micStreamRef.current.getTracks().forEach(track => track.stop());
@@ -86,14 +79,6 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       if (cameraStreamRef.current) {
         cameraStreamRef.current.getTracks().forEach(track => track.stop());
         cameraStreamRef.current = null;
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-        audioContextRef.current = null;
-      }
-      if (silenceTimeoutRef.current) {
-        clearTimeout(silenceTimeoutRef.current);
-        silenceTimeoutRef.current = null;
       }
     }, 300);
   }, []);
@@ -105,6 +90,9 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       setPhase('connected-video2');
       setVideoPaused(false);
     } else if (currentPhase === 'connected-video2') {
+      setPhase('connected-video3');
+      setVideoPaused(false);
+    } else if (currentPhase === 'connected-video3') {
       generatePrescription();
       closeVideoCall();
     }
@@ -117,7 +105,8 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       return;
     }
     
-    if (currentPhase === 'connected-video2') {
+    // After Video 3 ends, close and generate prescription
+    if (currentPhase === 'connected-video3') {
       generatePrescription();
       closeVideoCall();
     }
@@ -136,83 +125,16 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     }
   }, []);
 
-  const setupMicDetection = useCallback(async () => {
+  const setupMic = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStreamRef.current = stream;
-      
-      audioContextRef.current = new AudioContext();
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      analyserRef.current.fftSize = 256;
-      source.connect(analyserRef.current);
-      
-      startMicMonitoring();
     } catch (error) {
       console.log('Mic permission denied');
       setMicEnabled(false);
     }
   }, []);
 
-  const startMicMonitoring = useCallback(() => {
-    if (!analyserRef.current) return;
-
-    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-    const SILENCE_THRESHOLD = 35;
-    const SILENCE_DURATION = 2000;
-
-    const checkAudio = () => {
-      if (!analyserRef.current || !videoCallOpen) return;
-
-      analyserRef.current.getByteFrequencyData(dataArray);
-      const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-
-      const currentPhase = phaseRef.current;
-      const isConnected = currentPhase.startsWith('connected-');
-
-      if (!isConnected) {
-        requestAnimationFrame(checkAudio);
-        return;
-      }
-
-      if (average > SILENCE_THRESHOLD) {
-        setIsSpeaking(true);
-        hasSpokenRef.current = true;
-        
-        if (doctorVideoRef.current && !doctorVideoRef.current.paused) {
-          doctorVideoRef.current.pause();
-          setVideoPaused(true);
-        }
-
-        if (silenceTimeoutRef.current) {
-          clearTimeout(silenceTimeoutRef.current);
-          silenceTimeoutRef.current = null;
-        }
-      } else if (hasSpokenRef.current) {
-        setIsSpeaking(false);
-        
-        if (!silenceTimeoutRef.current) {
-          silenceTimeoutRef.current = setTimeout(() => {
-            if (doctorVideoRef.current && doctorVideoRef.current.paused) {
-              const timeRemaining = doctorVideoRef.current.duration - doctorVideoRef.current.currentTime;
-              if (timeRemaining > 0.5) {
-                doctorVideoRef.current.play();
-                setVideoPaused(false);
-              } else {
-                proceedToNextVideo();
-              }
-            }
-            silenceTimeoutRef.current = null;
-            hasSpokenRef.current = false;
-          }, SILENCE_DURATION);
-        }
-      }
-
-      requestAnimationFrame(checkAudio);
-    };
-
-    requestAnimationFrame(checkAudio);
-  }, [videoCallOpen, proceedToNextVideo]);
 
   const handleVideoCall = () => {
     setVideoCallOpen(true);
@@ -268,7 +190,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
           clearInterval(timer);
           setPhase('connected-video1');
           setupCamera();
-          setupMicDetection();
+          setupMic();
           return 0;
         }
         return prev - 1;
@@ -276,7 +198,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [phase, setupCamera, setupMicDetection]);
+  }, [phase, setupCamera, setupMic]);
 
   // Play doctor videos
   useEffect(() => {
@@ -290,6 +212,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     switch (phase) {
       case 'connected-video1': return '/doctor-video-1.mp4';
       case 'connected-video2': return '/doctor-video-2.mp4';
+      case 'connected-video3': return '/doctor-video-3.mp4';
       default: return '';
     }
   };
@@ -303,9 +226,12 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     }
     setMicEnabled(newMicState);
     
-    // When mic is turned OFF during video1, immediately play video2
-    if (!newMicState && phaseRef.current === 'connected-video1') {
-      proceedToNextVideo();
+    // When mic is turned OFF, immediately play next video
+    if (!newMicState) {
+      const currentPhase = phaseRef.current;
+      if (currentPhase === 'connected-video1' || currentPhase === 'connected-video2') {
+        proceedToNextVideo();
+      }
     }
   };
 
@@ -421,7 +347,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
                     {formatTime(scheduleCountdown)}
                   </div>
                 </div>
-                <p className="text-white/50 text-lg mt-6 mb-8">Scheduling — wait time approx 15 sec</p>
+                <p className="text-white/50 text-lg mt-6 mb-8">Connecting you to Dr. Sneha Kumari…</p>
                 <Button 
                   onClick={closeVideoCall}
                   variant="outline"
@@ -453,8 +379,9 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
 
                   <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full">
                     <p className="text-white/80 text-xs">
-                      {phase === 'connected-video1' && 'Part 1/2'}
-                      {phase === 'connected-video2' && 'Part 2/2'}
+                      {phase === 'connected-video1' && 'Part 1/3'}
+                      {phase === 'connected-video2' && 'Part 2/3'}
+                      {phase === 'connected-video3' && 'Part 3/3'}
                     </p>
                   </div>
                 </div>
@@ -476,7 +403,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
                     </div>
                   )}
                   <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-xs text-white">
-                    You {isSpeaking && <span className="text-green-400">(speaking)</span>}
+                    You
                   </div>
                 </div>
 
