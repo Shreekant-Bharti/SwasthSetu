@@ -180,7 +180,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     }
   }, [phase]);
 
-  // Schedule countdown
+  // Schedule countdown - now shows callback request instead of video call
   useEffect(() => {
     if (phase !== 'scheduling') return;
 
@@ -188,9 +188,13 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
       setScheduleCountdown(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          setPhase('connected-video1');
-          setupCamera();
-          setupMic();
+          // Show callback request popup instead of connecting to video
+          playChimeSound();
+          toast.success("Callback request generated! Soon you will receive a call from Dr. Sneha Kumari.", {
+            duration: 6000,
+            icon: "📞"
+          });
+          closeVideoCall();
           return 0;
         }
         return prev - 1;
@@ -198,7 +202,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [phase, setupCamera, setupMic]);
+  }, [phase, closeVideoCall]);
 
   // Play doctor videos
   useEffect(() => {
@@ -358,8 +362,8 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
               </div>
             )}
 
-            {/* Connected Video Call Phase */}
-            {phase.startsWith('connected-') && (
+            {/* Connected Video Call Phase - COMMENTED OUT FOR NOW */}
+            {/* {phase.startsWith('connected-') && (
               <div className="relative w-full h-full bg-slate-900">
                 <div className="absolute inset-0">
                   <video
@@ -386,7 +390,6 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
                   </div>
                 </div>
 
-                {/* Patient Video Preview */}
                 <div className="absolute bottom-24 right-6 w-48 h-36 rounded-xl overflow-hidden border-2 border-primary/50 shadow-lg bg-slate-800">
                   {cameraEnabled ? (
                     <video
@@ -407,7 +410,6 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
                   </div>
                 </div>
 
-                {/* Controls */}
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
                   <Button
                     onClick={toggleMic}
@@ -437,7 +439,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
                   </Button>
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       )}
