@@ -321,7 +321,7 @@ const OnlineConsultation = ({ userId, userName }: OnlineConsultationProps) => {
                 <div className="w-full max-w-lg aspect-video mb-8 rounded-xl overflow-hidden">
                   <video
                     ref={fallbackVideoRef}
-                    src="/doctor-video.mp4"
+                    src="/no-doctor-fallback.mp4"
                     className="w-full h-full object-cover"
                     playsInline
                   />
